@@ -1,59 +1,110 @@
-var express = require('express');
-var path = require('path');
-var favicon = require('static-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+global.Class = require('node.class');
 
-var routes = require('./routes/index');
-var users = require('./routes/users');
+var config = require('./app/config')
+//refernce https://github.com/mranney/node_redis/
+//refernce https://github.com/felixge/node-mysql
 
-var app = express();
+//nohup node app.js --typ=lobby --id=lobby-server-1 & >room_1.out
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
+/*prepare*/
+var WebSocketServer = require('ws').Server;
+var init_param = {typ:"lobby",id:"lobby-server-1"};
 
-app.use(favicon());
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded());
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use('/', routes);
-app.use('/users', users);
-
-/// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-    var err = new Error('Not Found');
-    err.status = 404;
-    next(err);
+process.argv.forEach(function (val, index, array) {
+    if (index<2){
+      //node and app
+      return;
+    }
+    var kv = val.replace(/\-\-/,'').split('=');
+    init_param[kv[0]] = kv[1];
 });
+console.log(init_param);
 
-/// error handlers
+/*prepare mysql*/
+if (config.mysql!=undefined) {
+    var mysql      = require('mysql');
+    global.db = mysql.createConnection({
+      host     : config.mysql.host,
+      user     : config.mysql.user,
+      password : config.mysql.password
+    });
 
-// development error handler
-// will print stacktrace
-if (app.get('env') === 'development') {
-    app.use(function(err, req, res, next) {
-        res.status(err.status || 500);
-        res.render('error', {
-            message: err.message,
-            error: err
+    db.connect();
+
+    // db.query('SELECT 1 + 1 AS solution', function(err, rows, fields) {
+    //   if (err) throw err;
+
+    //   console.log('The solution is: ', rows[0].solution);
+    // });
+
+    // db.end();
+}
+
+/*prepare redis*/
+if (config.redis!=undefined) {
+    var redis = require("redis");
+    global.kvdb = redis.createClient();
+
+    // if you'd like to select database 3, instead of 0 (default), call
+    // kvdb.select(3, function() { /* ... */ });
+
+    kvdb.on("error", function (err) {
+        console.log("Error " + err);
+    });
+
+    // kvdb.set("string key", "string val", redis.print);
+    // kvdb.hset("hash key", "hashtest 1", "some value", redis.print);
+    // kvdb.hset(["hash key", "hashtest 2", "some other value"], redis.print);
+    // kvdb.hkeys("hash key", function (err, replies) {
+    //     console.log(replies.length + " replies:");
+    //     replies.forEach(function (reply, i) {
+    //         console.log("    " + i + ": " + reply);
+    //     });
+    //     kvdb.quit();
+    // });
+}
+
+
+var serversInfo = config.servers[init_param.typ].serverList[init_param.id];
+
+if (serversInfo.frontend) {
+    //支持对用户接入,监听用户端口
+    global.frontServer = new WebSocketServer({port: serversInfo.clientPort});
+    frontServer.userClients = {};
+
+    frontServer.on('connection', function(socket) {
+        console.log('someone connected');
+
+        socket.on('message', function(message) {
+            console.log(message);
+            socket.send("who are you?");
+        })
+        .on('close',function(code, message){
+            console.log("===closeclient");
         });
     });
 }
 
-// production error handler
-// no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-        message: err.message,
-        error: {}
+//对服务器RPC接口
+global.backServer = new WebSocketServer({port: serversInfo.port});
+backServer.rpcClients = {};
+
+backServer.on('connection', function(socket) {
+    console.log('someone connected');
+
+    socket.on('message', function(message) {
+        console.log(message);
+        socket.send("who are you?");
+    })
+    .on('close',function(code, message){
+        console.log("===closeclient");
     });
 });
 
-
-module.exports = app;
+for (var serverTyp in config.servers) {
+    if (serverTyp === init_param.typ) {
+        continue;
+    }
+    var RpcServer = require('./app/base/rpcServer');
+    var thisServer = new RpcServer(serverTyp,config.servers[serverTyp]);    
+}
