@@ -8,16 +8,12 @@ var rpcServer = Class.extend({
 	// }
 	init : function (typ,serverConfigs){
 		
-		
+		console.log("create rpc for "+typ)
 		this.typ = typ;
 		this.runTyp = serverConfigs.runTyp;
 		this.rpcMode = serverConfigs.rpcMode;
 		this.rpcProtocol = serverConfigs.rpcProtocol;
-		for (var serverName in serverConfigs.serverList) {
-	        var value = serverConfigs.serverList[serverName];
-
-	        console.log(value);
-	    }
+		
 	}
 });
 

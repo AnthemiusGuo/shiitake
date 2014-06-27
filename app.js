@@ -1,6 +1,6 @@
 global.Class = require('node.class');
 
-var config = require('./app/config')
+var config = require('app/config')
 //refernce https://github.com/mranney/node_redis/
 //refernce https://github.com/felixge/node-mysql
 
@@ -101,10 +101,7 @@ backServer.on('connection', function(socket) {
     });
 });
 
-for (var serverTyp in config.servers) {
-    if (serverTyp === init_param.typ) {
-        continue;
-    }
-    var RpcServer = require('./rpc/'+config.servers[serverTyp].rpcMode);
-    var thisServer = new RpcServer(serverTyp,config.servers[serverTyp]);    
-}
+var RPC = require('app/base/rpc');
+global.rpc = new RPC(config.servers,init_param.typ);
+//e.g.
+//rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});
