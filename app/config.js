@@ -47,12 +47,16 @@ if (PRODUCTION==="production") {
 	config.servers = {
 	    "lobby":{
 	    	"runTyp":"nodejs",
+	    	"rpcMode":"lobby",
+	    	"rpcProtocol":"websocket",
 	    	"serverList" : {
 	    		"lobby-server-1":{"id":"lobby-server-1","host":"127.0.0.1","port":3001,"clientPort":3000,"frontend":true}
 	    	}
 	    },
 	    "upstream":{
 	    	"runTyp":"web",
+	    	"rpcMode":"upstream",
+	    	"rpcProtocol":"web",
 	    	"serverList" : {
 	    		"main":{"id":"main","url":"http://127.0.0.1"}
 	    	}
@@ -60,6 +64,8 @@ if (PRODUCTION==="production") {
 	    },
 	    "zha":{
 	    	"runTyp":"nodejs",
+	    	"rpcMode":"game",
+	    	"rpcProtocol":"websocket",
 	    	"serverList" : {
 	    		"zha-server-1":{"id":"zha-server-1","host":"127.0.0.1","port":3011,"clientPort":3010,"frontend":true}
 	    	}
@@ -67,6 +73,8 @@ if (PRODUCTION==="production") {
 	    },
 	    "yao":{
 	    	"runTyp":"nodejs",
+	    	"rpcMode":"game",
+	    	"rpcProtocol":"websocket",
 	    	"serverList" : {
 	    		"yao-server-1":{"id":"yao-server-1","host":"127.0.0.1","port":3021,"clientPort":3020,"frontend":true}
 	    	}
@@ -74,6 +82,8 @@ if (PRODUCTION==="production") {
 	    },
 	    "samples":{
 	    	"runTyp":"c",
+	    	"rpcMode":"game",
+	    	"rpcProtocol":"websocket",
 	    	"serverList" : {
 	    		"samples-server-1":{"id":"samples-server-1","host":"127.0.0.1","port":3031,"clientPort":3030,"frontend":false}
 	    	}

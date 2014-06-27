@@ -105,6 +105,6 @@ for (var serverTyp in config.servers) {
     if (serverTyp === init_param.typ) {
         continue;
     }
-    var RpcServer = require('./app/base/rpcServer');
+    var RpcServer = require('./rpc/'+config.servers[serverTyp].rpcMode);
     var thisServer = new RpcServer(serverTyp,config.servers[serverTyp]);    
 }
