@@ -5,13 +5,6 @@ if (process.env.NODE_ENV === undefined) {
 	var PRODUCTION = process.env.NODE_ENV;
 }
 
-
-
-config.express = {
-	port: 3000,
-	ip: "127.0.0.1"
-};
-
 config.redis = {
 	port: 27017,
 	host: 'localhost'

@@ -6,7 +6,7 @@ var rpc = Class.extend({
 		        continue;
 		    }
 		    var RpcServer = require('app/rpc/'+servers[serverTyp].rpcMode);
-		    var thisServer = new RpcServer(serverTyp,config.servers[serverTyp]);    
+		    var thisServer = new RpcServer(serverTyp,servers[serverTyp]);    
 		    this.rpcServers[serverTyp] = thisServer;
 		}
 	},
