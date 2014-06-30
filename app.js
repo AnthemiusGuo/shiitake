@@ -1,6 +1,6 @@
 global.Class = require('node.class');
 
-var config = require('app/config')
+var config = require('app/config/config')
 //refernce https://github.com/mranney/node_redis/
 //refernce https://github.com/felixge/node-mysql
 
@@ -8,7 +8,8 @@ var config = require('app/config')
 
 /*prepare*/
 var WebSocketServer = require('ws').Server;
-var init_param = {typ:"lobby",id:"lobby-server-1"};
+// var init_param = {typ:"lobby",id:"lobby-server-1"};
+var init_param = {typ:"zha",id:"zha-server-1"};
 
 process.argv.forEach(function (val, index, array) {
     if (index<2){
@@ -106,6 +107,6 @@ global.rpc = new RPC(config.servers,init_param.typ);
 //e.g.
 //rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});
 
-var LogicServer = require('app/app/'+init_param.typ);
+var LogicServer = require('app/apps/'+init_param.typ+'/'+init_param.typ);
 global.logicServer = new LogicServer(init_param.typ,init_param.id,config.servers[init_param.typ].serverList[init_param.id]); 
 logicServer.run();

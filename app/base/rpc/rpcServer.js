@@ -14,8 +14,11 @@ var rpcServer = Class.extend({
 		this.rpcMode = serverConfigs.rpcMode;
 		this.rpcProtocol = serverConfigs.rpcProtocol;
 		this.requestQueue = [];
+		this.requestId = 0;
+	},
+	run : function(method,id,params){
+		console.log(method,id,params);
 	}
-	
 });
 
 module.exports = rpcServer;

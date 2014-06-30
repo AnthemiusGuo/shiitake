@@ -1,4 +1,4 @@
-var GameServer = require('app/app/game');
+var GameServer = require('app/apps/base/game');
 var YaoServer = GameServer.extend({
 	run : function() {
 
