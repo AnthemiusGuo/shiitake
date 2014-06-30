@@ -6,20 +6,14 @@ a distribution nodejs game server structure, based on websocket
 depends on:
 --------
 
-Redis? or MongoDB?
+Redis
 
 Mysql
 
-Socket.io
-
-Express?
+ws for websocket
 
 Installation:
 ---------
-
-sudo npm install -g express
-
-sudo npm install -g express-generator
 
 npm install
 
@@ -32,3 +26,11 @@ export NODE_ENV=production
 or
 
 export NODE_ENV=development
+
+code structure
+----------
+app/	all codes
+app/app 	logic codes of init/time circle for per server
+app/base  	base functions/classes
+app/controllers		rpc functions
+app/rpc 	rpc codes for connect to other rpc servers 

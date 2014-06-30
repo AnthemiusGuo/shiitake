@@ -105,3 +105,7 @@ var RPC = require('app/base/rpc');
 global.rpc = new RPC(config.servers,init_param.typ);
 //e.g.
 //rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});
+
+var LogicServer = require('app/app/'+init_param.typ);
+global.logicServer = new LogicServer(init_param.typ,init_param.id,config.servers[init_param.typ].serverList[init_param.id]); 
+logicServer.run();

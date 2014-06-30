@@ -5,7 +5,7 @@ var rpc = Class.extend({
 		    if (serverTyp === skipTyp) {
 		        continue;
 		    }
-		    var RpcServer = require('app/rpc/'+servers[serverTyp].rpcMode);
+		    var RpcServer = require('app/base/rpc/'+servers[serverTyp].rpcMode);
 		    var thisServer = new RpcServer(serverTyp,servers[serverTyp]);    
 		    this.rpcServers[serverTyp] = thisServer;
 		}

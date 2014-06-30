@@ -14,7 +14,8 @@ config.mysql = {
 	port: 3306,
 	host: 'localhost',
 	user: 'test',
-	password: 'test'
+	password: 'test',
+	db: 'card'
 };
 
 config.upstreamUrl = {
