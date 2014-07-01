@@ -1,47 +1,41 @@
-var table = Class.extend({
+var TablePublic = require('app/apps/base/tablePublic');
+var ZhaPoker = require('app/apps/zha/zhaPoker');
+var Table = TablePublic.extend({
 	init : function(tableId,roomConfig) {
-		this.tableId = tableId;
-		this.roomConfig = roomConfig;
-		this.state = "init";
-		this.matchId = 0;
-		this.stateConfig = {"Start":{nextState:"WaitBet",timer:1},
-							"WaitBet":{nextState:"WaitBet",timer:20},
-							"WaitOpen":{nextState:"WaitBet",timer:20},
-							"AfterOpen":{nextState:"WaitBet",timer:20}};
-		this.userList = {};
-		this.robotList = {};
-		this.userCounter = 0;
+		this._super();
+		//四门押注
+		this.bet_info = [0,0,0,0];
+		//用户押注
+		this.user_bet_info = {};
+	    this.user_bet_total = 0;
+	    //历史纪录
+		this.his_1 = [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1];
+	    this.his_2 =  [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1];
+	    this.his_3 =  [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1];
+	    this.his_4 =  [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1];
+
+	    this.zhuang = new ZhaPoker();
+	    this.xian1 = new ZhaPoker();
+	    this.xian2 = new ZhaPoker();
+	    this.xian3 = new ZhaPoker();
+	    this.xian4 = new ZhaPoker();
+
+	    this.zhuang_name = '未设置';
+	    this.innings = 0;
+	    this.zhuang_uid = 0;
+	    this.robot_uid = 0;
+	    this.zhuang_typ = 0;
+	    this.zhuang_user_info = {};
+	    this.robot_zhuang_venior = 0;
+	    this.zhuang_queue = {};
+
+	    this.online_rank_msg = [];
+	    this.update_online_rank_zeit = 0;
+
+	    this.robot_users = {};
+	    this.robot_zhuang_users = [];
 	},
-	run : function() {
-		
-	},
-	stop : function() {
-		if (this.mainTimer!==undefined && this.mainTimer!==null) {
-			// clearInterval(this.mainTimer);
-			clearTimeout(this.mainTimer);
-			this.mainTimer = null;
-		}
-	},
-	begin : function() {
-		self.state = "Start";
-		this.mainTimer = setTimeout(this["onState"+this.stateConfig[self.state].nextState].bind(this),this.stateConfig[self.state].timer);
-	},
-	onStateWaitBet : function(){
-		self.state = "WaitBet";
-		this.mainTimer = setTimeout(this["onState"+this.stateConfig[self.state].nextState].bind(this),this.stateConfig[self.state].timer);
-	},
-	onStateWaitOpen : function(){
-		self.state = "WaitOpen";
-		this.mainTimer = setTimeout(this["onState"+this.stateConfig[self.state].nextState].bind(this),this.stateConfig[self.state].timer);
-	},
-	onStateAfterOpen : function(){
-		self.state = "AfterOpen";
-		this.mainTimer = setTimeout(this["onState"+this.stateConfig[self.state].nextState].bind(this),this.stateConfig[self.state].timer);
-	},
-	onUserLogin : function(uid,user) {
-		this.userList[uid] = user;
-		this.userCounter = Object.keys(this.userList).length;
-	}
+
 });
 
-module.exports = table;
+module.exports = Table;

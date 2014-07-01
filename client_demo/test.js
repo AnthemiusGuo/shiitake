@@ -16,16 +16,44 @@
 
 // Let the library know where WebSocketMain.swf is:
 WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
+var packetId = 0;
+function sendLobby(category,method,data) {
+	var dd = new Date();
+	var ts = dd.getTime();
+	var packet = {'c':category,'m':method,'d':data,'t':ts,'s':packetId,'r':1};
+	lobbySocket.send(JSON.stringify(packet));
+	packetId++;
+}
+
+function sendGame(category,method,data) {
+	var dd = new Date();
+	var ts = dd.getTime();
+	var packet = {'c':category,'m':method,'d':data,'t':ts,'s':packetId,'r':1};
+	gameSocket.send(JSON.stringify(packet));
+	packetId++;
+}
 
 // Write your code in the same way as for native WebSocket:
-var ws = new WebSocket("ws://127.0.0.1:3000");
-ws.onopen = function() {
-ws.send("Hello");  // Sends a message.
+var lobbySocket = new WebSocket("ws://127.0.0.1:3000");
+lobbySocket.onopen = function() {
+	sendLobby('user','login',{uid:1})
 };
-ws.onmessage = function(e) {
+lobbySocket.onmessage = function(e) {
 // Receives a message.
 	console.log(e.data);
 };
-ws.onclose = function() {
+lobbySocket.onclose = function() {
+	alert("closed");
+};
+
+var gameSocket = new WebSocket("ws://127.0.0.1:3010");
+gameSocket.onopen = function() {
+	sendGame('user','login',{uid:1})
+};
+gameSocket.onmessage = function(e) {
+// Receives a message.
+	console.log(e.data);
+};
+gameSocket.onclose = function() {
 	alert("closed");
 };

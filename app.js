@@ -1,13 +1,11 @@
 global.Class = require('node.class');
-
+require('app/apps/base/baseFunction');
 var config = require('app/config/config')
 //refernce https://github.com/mranney/node_redis/
 //refernce https://github.com/felixge/node-mysql
 
 //nohup node app.js --typ=lobby --id=lobby-server-1 & >room_1.out
 
-/*prepare*/
-var WebSocketServer = require('ws').Server;
 // var init_param = {typ:"lobby",id:"lobby-server-1"};
 var init_param = {typ:"zha",id:"zha-server-1"};
 
@@ -20,6 +18,10 @@ process.argv.forEach(function (val, index, array) {
     init_param[kv[0]] = kv[1];
 });
 console.log(init_param);
+
+/*prepare*/
+var WebSocketServer = require('ws').Server;
+var ClientUser = require('app/apps/'+init_param.typ+'/client')
 
 /*prepare mysql*/
 if (config.mysql!=undefined) {
@@ -65,6 +67,17 @@ if (config.redis!=undefined) {
     // });
 }
 
+console.log("init rpc calling...");
+var RPC = require('app/base/rpc');
+global.rpc = new RPC(config.servers,init_param.typ);
+
+//e.g.
+//rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});
+
+var LogicServer = require('app/apps/'+init_param.typ+'/'+init_param.typ);
+global.logicServer = new LogicServer(init_param.typ,init_param.id,config.servers[init_param.typ].serverList[init_param.id]); 
+logicServer.run();
+
 
 var serversInfo = config.servers[init_param.typ].serverList[init_param.id];
 
@@ -75,13 +88,16 @@ if (serversInfo.frontend) {
 
     frontServer.on('connection', function(socket) {
         console.log('someone connected');
-
+        var user = new ClientUser(socket);
+        logicServer.newUserSocketConnect(user,socket);
         socket.on('message', function(message) {
             console.log(message);
-            socket.send("who are you?");
+            logicServer.onClientMsg(socket,message)
         })
         .on('close',function(code, message){
             console.log("===closeclient");
+            logicServer.closeUserSocketConnect(socket);
+            user.closeSocket();
         });
     });
 }
@@ -92,21 +108,14 @@ backServer.rpcClients = {};
 
 backServer.on('connection', function(socket) {
     console.log('someone connected');
-
+    
     socket.on('message', function(message) {
-        console.log(message);
-        socket.send("who are you?");
+        logicServer.onRPCMsg()
     })
     .on('close',function(code, message){
         console.log("===closeclient");
+        
     });
 });
 
-var RPC = require('app/base/rpc');
-global.rpc = new RPC(config.servers,init_param.typ);
-//e.g.
-//rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});
 
-var LogicServer = require('app/apps/'+init_param.typ+'/'+init_param.typ);
-global.logicServer = new LogicServer(init_param.typ,init_param.id,config.servers[init_param.typ].serverList[init_param.id]); 
-logicServer.run();
