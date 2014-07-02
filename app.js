@@ -91,15 +91,16 @@ if (serversInfo.frontend) {
     frontServer.on('connection', function(socket) {
         console.log('someone connected');
         var clientSession = new ClientUser(socket);
-        logicApp.newUserSocketConnect(clientSession,socket);
+        logicApp.onNewUserSocketConnect(clientSession,socket);
         socket.on('message', function(message) {
             console.log(message);
             logicApp.onClientMsg(socket,message)
         })
         .on('close',function(code, message){
             console.log("===closeclient");
-            logicApp.closeUserSocketConnect(socket);
-            clientSession.closeSocket();
+            logicApp.onCloseUserSocketConnect(socket);
+            clientSession.onCloseSocket();
+            clientSession = null;
         });
     });
 }

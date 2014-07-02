@@ -29,11 +29,11 @@ var BaseServer = Class.extend({
 	run : function() {
 		
 	},
-	newUserSocketConnect : function(user,socket) {
+	onNewUserSocketConnect : function(user,socket) {
 		this.socketUserMapping[socket] = user;
 		this.connectUserCount++;
 	},
-	closeUserSocketConnect : function(socket) {
+	onCloseUserSocketConnect : function(socket) {
 		if (this.socketUserMapping[socket].isLogined) {
 			var uid = this.socketUserMapping[socket].uid;
 			this.uidClientMapping[uid] = null;
@@ -102,9 +102,21 @@ var BaseServer = Class.extend({
 		}
 	},
 	login : function(uid,userSession) {
+		if (F.isset(this.uidClientMapping[uid])) {
+			this.uidClientMapping[uid].kickUser();
+		}
+
 		this.uidClientMapping[uid] = userSession;
 		userSession.isLogined = true;
 		userSession.uid = uid;
+
+		if (ret==1) {
+			userSession.send("user","login",1,packetId,{})
+		} else {
+			userSession.send("user","login",ret,packetId,{e:"登录失败"})
+		}
+
+		//剩下的行为子类实现
 	}
 });
 

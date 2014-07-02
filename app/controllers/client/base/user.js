@@ -12,14 +12,8 @@ var UserCtrller = BaseController.extend({
 
 		//校验用户 ticket 等，这里先省略
 		
-		//如果是异步，回调时候做这个
-		var ret = this.app.login(data.uid,userSession);
-		if (ret==1) {
-			userSession.send("user","login",1,packetId,{})
-		} else {
-			userSession.send("user","login",ret,packetId,{e:"登录失败"})
-		}
-		
+		//异步初始化玩家信息，获取用户信息后回复 login 请求
+		this.app.login(data.uid,userSession);
 	}
 });
 
