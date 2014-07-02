@@ -1,6 +1,7 @@
 global.Class = require('node.class');
 global.utils = require('app/apps/base/baseFunction');
 global.F = require('phpjs');
+global.dmManager = require('app/dataModels/DataModelManager');
 global.rootDir = __dirname;
 var config = require('app/config/config')
 //refernce https://github.com/mranney/node_redis/
@@ -31,7 +32,8 @@ if (config.mysql!=undefined) {
     global.db = mysql.createConnection({
       host     : config.mysql.host,
       user     : config.mysql.user,
-      password : config.mysql.password
+      password : config.mysql.password,
+      database : config.mysql.db,
     });
 
     db.connect();
@@ -56,6 +58,17 @@ if (config.redis!=undefined) {
     kvdb.on("error", function (err) {
         console.log("Error " + err);
     });
+    //client.mset(["test keys 1", "test val 1", "test keys 2", "test val 2"], function (err, res) {});
+
+    //client.mset("test keys 1", "test val 1", "test keys 2", "test val 2", function (err, res) {});
+
+    //client.set("some key", "some val");
+    //client.set(["some other key", "some val"]);
+
+    //client.get("missingkey", function(err, reply) {
+    // reply is null when the key is missing
+    //    console.log(reply);
+    //});
 
     // kvdb.set("string key", "string val", redis.print);
     // kvdb.hset("hash key", "hashtest 1", "some value", redis.print);

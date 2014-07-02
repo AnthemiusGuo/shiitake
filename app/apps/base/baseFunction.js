@@ -12,3 +12,17 @@ exports.checkParam = function(data,keys){
   }
   return true;
 };
+
+exports.supplant = function (s,o) {
+    return s.replace(
+        /\{([^{}]*)\}/g,
+        function (a, b) {
+            var r = o[b];
+            return typeof r === 'string' || typeof r === 'number' ? r : a;
+        }
+    );
+};
+
+exports.trim = function (s) {
+    return s.replace(/^\s*(\S*(?:\s+\S+)*)\s*$/, "$1");
+};

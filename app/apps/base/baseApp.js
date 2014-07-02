@@ -13,9 +13,13 @@ var BaseServer = Class.extend({
 		this.id = id;
 		this.info = info;
 		this.errorInfo = "";
+
+		this.packageRouter = {};
+
 		this.socketUserMapping = {};
 		this.uidClientMapping = {};
-		this.packageRouter = {};
+		
+
 		this.connectUserCount = 0;
 		this.loginedUserCount = 0;
 	},
@@ -106,15 +110,17 @@ var BaseServer = Class.extend({
 			this.uidClientMapping[uid].kickUser();
 		}
 
-		this.uidClientMapping[uid] = userSession;
-		userSession.isLogined = true;
-		userSession.uid = uid;
-
-		if (ret==1) {
-			userSession.send("user","login",1,packetId,{})
-		} else {
-			userSession.send("user","login",ret,packetId,{e:"登录失败"})
-		}
+		//获取用户信息
+		dmManager.getData("user","BaseInfo",{uid:uid},function(ret,data){
+			if (ret>0) {
+				this.uidClientMapping[uid] = userSession;
+				userSession.isLogined = true;
+				userSession.uid = uid;
+				userSession.send("user","login",1,packetId,{})
+			} else {
+				userSession.send("user","login",ret,packetId,{e:"登录失败"})
+			}
+		}.bind(this));
 
 		//剩下的行为子类实现
 	}

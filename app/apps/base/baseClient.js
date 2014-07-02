@@ -25,7 +25,12 @@ var BaseClient = Class.extend({
 	},
 	kickUser : function() {
 		this.sendErr(-9000,"您的帐号已经在其他地方登录, 您已经被踢下线。");
-
+		this.socket.close();
+		this.socket = null;
+		this.isConnect = false;
+		//kick 后并不立刻删除本对象，只是置为不连接。
+		//因为 table 中可能这个用户对象还在使用，在 table 本局结束后再遍历所有 null 的对象，等待 GC 回收内存。
+		
 	}
 });
 
