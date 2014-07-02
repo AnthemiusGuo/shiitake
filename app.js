@@ -1,5 +1,7 @@
 global.Class = require('node.class');
-require('app/apps/base/baseFunction');
+global.utils = require('app/apps/base/baseFunction');
+global.F = require('phpjs');
+global.rootDir = __dirname;
 var config = require('app/config/config')
 //refernce https://github.com/mranney/node_redis/
 //refernce https://github.com/felixge/node-mysql
@@ -74,9 +76,9 @@ global.rpc = new RPC(config.servers,init_param.typ);
 //e.g.
 //rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});
 
-var LogicServer = require('app/apps/'+init_param.typ+'/'+init_param.typ);
-global.logicServer = new LogicServer(init_param.typ,init_param.id,config.servers[init_param.typ].serverList[init_param.id]); 
-logicServer.run();
+var LogicApp = require('app/apps/'+init_param.typ+'/'+init_param.typ);
+global.logicApp = new LogicApp(init_param.typ,init_param.id,config.servers[init_param.typ].serverList[init_param.id]); 
+logicApp.run();
 
 
 var serversInfo = config.servers[init_param.typ].serverList[init_param.id];
@@ -88,16 +90,16 @@ if (serversInfo.frontend) {
 
     frontServer.on('connection', function(socket) {
         console.log('someone connected');
-        var user = new ClientUser(socket);
-        logicServer.newUserSocketConnect(user,socket);
+        var clientSession = new ClientUser(socket);
+        logicApp.newUserSocketConnect(clientSession,socket);
         socket.on('message', function(message) {
             console.log(message);
-            logicServer.onClientMsg(socket,message)
+            logicApp.onClientMsg(socket,message)
         })
         .on('close',function(code, message){
             console.log("===closeclient");
-            logicServer.closeUserSocketConnect(socket);
-            user.closeSocket();
+            logicApp.closeUserSocketConnect(socket);
+            clientSession.closeSocket();
         });
     });
 }
@@ -110,7 +112,7 @@ backServer.on('connection', function(socket) {
     console.log('someone connected');
     
     socket.on('message', function(message) {
-        logicServer.onRPCMsg()
+        logicApp.onRPCMsg()
     })
     .on('close',function(code, message){
         console.log("===closeclient");
