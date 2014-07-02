@@ -14,10 +14,10 @@ var BaseServer = Class.extend({
 		this.info = info;
 		this.errorInfo = "";
 		this.socketUserMapping = {};
-		this.uidUserMapping = {};
-		this.uidSocketMapping = {};
+		this.uidClientMapping = {};
 		this.packageRouter = {};
-		
+		this.connectUserCount = 0;
+		this.loginedUserCount = 0;
 	},
 	getErr : function(){
 		return this.errorInfo;
@@ -31,14 +31,15 @@ var BaseServer = Class.extend({
 	},
 	newUserSocketConnect : function(user,socket) {
 		this.socketUserMapping[socket] = user;
+		this.connectUserCount++;
 	},
 	closeUserSocketConnect : function(socket) {
 		if (this.socketUserMapping[socket].isLogined) {
 			var uid = this.socketUserMapping[socket].uid;
-			this.uidUserMapping[uid] = null;
-			this.uidSocketMapping[uid] = null;
+			this.uidClientMapping[uid] = null;
 		}
 		this.socketUserMapping[socket] = null;
+		this.connectUserCount--;
 	},
 	onClientMsg : function(socket,msg) {
 		var package = JSON.parse(msg);
@@ -78,13 +79,13 @@ var BaseServer = Class.extend({
 
 		this.packageRouter[category][method](userSession,ret,ts,data,packetSerId);
 	},
-	sendToClientBySocket : function(socket,category,method,ret,packetId,data) {
+	sendToClientBySocket : function(socket,category,method,ret,packetId,data){
 		var ts =  new Date().getTime();
 		var packet = {'c':category,'m':method,'d':data,'t':ts,'s':packetId,'r':ret};
 		socket.send(JSON.stringify(packet));
 	},
 	sendToClientErrBySocket : function(socket,errorId,errorInfo,packetId) {
-		this.sendToClientBySocket(socket,'error','packageErr',errorId,packetId,errorInfo);
+		this.sendToClientBySocket(socket,'error','packageErr',errorId,packetId,{e:errorInfo});
 	},
 	lookup : function(path){
 		if (!utils.isAbsolute(path)) {
@@ -101,7 +102,9 @@ var BaseServer = Class.extend({
 		}
 	},
 	login : function(uid,userSession) {
-		
+		this.uidClientMapping[uid] = userSession;
+		userSession.isLogined = true;
+		userSession.uid = uid;
 	}
 });
 

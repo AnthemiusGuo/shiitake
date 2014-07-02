@@ -6,6 +6,11 @@ var GameServer = BaseServer.extend({
 	run : function(method,id,params) {
 		
 	},
+	login : function(uid,userSession) {
+		this._super(uid,userSession);
+		//rpc call lobby that user is in here, don't let him go anywhere else
+		//or use redis????
+	}
 	
 });
 module.exports = GameServer;

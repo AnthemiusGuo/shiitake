@@ -784,8 +784,6 @@
 /node_modules/phpjs/tools/testlast.sh
 /node_modules/phpjs/tools/whitespace_closure.sh
 /socketioApp.js
-/app/config/config.js
-/app/config/zha.js
 /node_modules/mysql/.npmignore
 /node_modules/mysql/Changes.md
 /node_modules/mysql/License
@@ -2508,3 +2506,5 @@
 /node_modules/static-favicon/favicon.ico
 /node_modules/static-favicon/index.js
 /node_modules/static-favicon/package.json
+
+node_modules/ws/build/gyp-mac-tool

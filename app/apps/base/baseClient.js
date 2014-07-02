@@ -9,10 +9,16 @@ var BaseClient = Class.extend({
 	closeSocket: function() {
 
 	},
-	send : function(socket,category,method,ret,packetId,data) {
+	send : function(category,method,ret,packetId,data) {
 		var ts =  new Date().getTime();
 		var packet = {'c':category,'m':method,'d':data,'t':ts,'s':packetId,'r':ret};
 		this.socket.send(JSON.stringify(packet));
+	},
+	sendErr : function(errorId,errorInfo,packetId) {
+		this.send('error','packageErr',errorId,packetId,{e:errorInfo});
+	},
+	sendErrPackFormat: function(packetId) {
+		this.sendErr(-9995,"信令格式有误",packetId);
 	},
 });
 
