@@ -58,7 +58,7 @@ function sendGame(category,method,data) {
 var lobbySocket = new WebSocket("ws://127.0.0.1:3000");
 lobbySocket.onopen = function() {
 	recvLog("lobby","open");
-	sendLobby('user','login',{uid:1})
+	sendLobby('user','login',{uid:21})
 };
 lobbySocket.onmessage = function(e) {
 // Receives a message.
@@ -71,7 +71,7 @@ lobbySocket.onclose = function() {
 var gameSocket = new WebSocket("ws://127.0.0.1:3010");
 gameSocket.onopen = function() {
 	recvLog("game","open");
-	sendGame('user','login',{uid:1})
+	sendGame('user','login',{uid:21})
 };
 gameSocket.onmessage = function(e) {
 	recvLog("game",e.data);
