@@ -6,7 +6,7 @@ exports.isAbsolute = function(path){
 
 exports.checkParam = function(data,keys){
   for (var k in keys) {
-  	if (!F.isset(data[k])) {
+  	if (!F.isset(data[keys[k]])) {
   		return false;
   	}
   }

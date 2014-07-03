@@ -4,6 +4,7 @@ var UserDM = BaseDM.extend({
 		this._super()
 	},
 	getBaseInfo:function(param,cb){
+		var self = this;
 		this.getCache("user","BaseInfo",param.uid,cb,function(ret,data){
 			var sql = utils.supplant('SELECT * FROM u_account WHERE uid={uid}',param);
 			db.query(sql, function(err, rows, fields) {
@@ -17,7 +18,8 @@ var UserDM = BaseDM.extend({
 	    		}
 
 	    		var userInfo = rows[0];
-	    		this.setCache("user","BaseInfo",param.uid,)
+	    		// console.log("db get user",userInfo);
+	    		self.setCache("user","BaseInfo",param.uid,userInfo);
 	    		cb(1,userInfo);
 
 	    	});

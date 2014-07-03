@@ -15,7 +15,7 @@ config.mysql = {
 	host: 'localhost',
 	user: 'test',
 	password: 'test',
-	db: 'card'
+	db: 'card_game'
 };
 
 config.upstreamUrl = {

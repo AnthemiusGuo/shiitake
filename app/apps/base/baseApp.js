@@ -63,7 +63,7 @@ var BaseServer = Class.extend({
 				var Category = require('app/controllers/client/'+this.typ+'/'+category);				
 			} else {
 				if (this.lookup('app/controllers/client/base/'+category)) {
-					var Category = require('app/controllers/client/'+this.typ+'/'+category);				
+					var Category = require('app/controllers/client/base/'+category);				
 				} else {
 					this.sendToClientErrBySocket(socket,-9998,"信令不存在",packetSerId);
 					return;
@@ -95,17 +95,20 @@ var BaseServer = Class.extend({
 		if (!utils.isAbsolute(path)) {
 			path = join(rootDir, path);
 		}
+		console.log("checking path for: "+path);
 		if (exists(path)) {
 			return true;
 		} 
 		path = path+".js";
+		console.log("checking path for: "+path);
+		
 		if (exists(path)) {
 			return true;
 		} else {
 			return false;
 		}
 	},
-	login : function(uid,userSession) {
+	login : function(uid,userSession,packetId) {
 		if (F.isset(this.uidClientMapping[uid])) {
 			this.uidClientMapping[uid].kickUser();
 		}
@@ -116,7 +119,7 @@ var BaseServer = Class.extend({
 				this.uidClientMapping[uid] = userSession;
 				userSession.isLogined = true;
 				userSession.uid = uid;
-				userSession.send("user","login",1,packetId,{})
+				userSession.send("user","login",1,packetId,data)
 			} else {
 				userSession.send("user","login",ret,packetId,{e:"登录失败"})
 			}

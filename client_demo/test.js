@@ -23,6 +23,26 @@ function sendLobby(category,method,data) {
 	var packet = {'c':category,'m':method,'d':data,'t':ts,'s':packetId,'r':1};
 	lobbySocket.send(JSON.stringify(packet));
 	packetId++;
+	sendLog("lobby",packet);
+}
+
+function sendLog(typ,msg) {
+	if (typeof(msg)=="object") {
+		var log = JSON.stringify(msg);
+	} else {
+		var log = msg;
+	}
+	console.log("log");
+	$("#send").append("sock "+typ+":"+log+"<br/>");
+}
+
+function recvLog(typ,msg) {
+	if (typeof(msg)=="object") {
+		var log = JSON.stringify(msg);
+	} else {
+		var log = msg;
+	}
+	$("#recv").append("sock "+typ+":"+log+"<br/>");
 }
 
 function sendGame(category,method,data) {
@@ -31,29 +51,31 @@ function sendGame(category,method,data) {
 	var packet = {'c':category,'m':method,'d':data,'t':ts,'s':packetId,'r':1};
 	gameSocket.send(JSON.stringify(packet));
 	packetId++;
+	sendLog("game",packet);
 }
 
 // Write your code in the same way as for native WebSocket:
 var lobbySocket = new WebSocket("ws://127.0.0.1:3000");
 lobbySocket.onopen = function() {
+	recvLog("lobby","open");
 	sendLobby('user','login',{uid:1})
 };
 lobbySocket.onmessage = function(e) {
 // Receives a message.
-	console.log(e.data);
+	recvLog("lobby",e.data);
 };
 lobbySocket.onclose = function() {
-	alert("closed");
+	recvLog("lobby","closed");
 };
 
 var gameSocket = new WebSocket("ws://127.0.0.1:3010");
 gameSocket.onopen = function() {
+	recvLog("game","open");
 	sendGame('user','login',{uid:1})
 };
 gameSocket.onmessage = function(e) {
-// Receives a message.
-	console.log(e.data);
+	recvLog("game",e.data);
 };
 gameSocket.onclose = function() {
-	alert("closed");
+	recvLog("game","closed");
 };

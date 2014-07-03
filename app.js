@@ -1,7 +1,7 @@
 global.Class = require('node.class');
 global.utils = require('app/apps/base/baseFunction');
 global.F = require('phpjs');
-global.dmManager = require('app/dataModels/DataModelManager');
+
 global.rootDir = __dirname;
 var config = require('app/config/config')
 //refernce https://github.com/mranney/node_redis/
@@ -25,6 +25,9 @@ console.log(init_param);
 /*prepare*/
 var WebSocketServer = require('ws').Server;
 var ClientUser = require('app/apps/'+init_param.typ+'/client')
+
+DmManager = require('app/dataModels/dataModelManager');
+global.dmManager = new DmManager();
 
 /*prepare mysql*/
 if (config.mysql!=undefined) {

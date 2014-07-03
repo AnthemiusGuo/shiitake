@@ -1,4 +1,4 @@
-var BaseController = require("app/controllers/client/base/BaseController");
+var BaseController = require("app/controllers/client/base/baseController");
 var UserCtrller = BaseController.extend({
 	init : function (app){
 		this._super(app);
@@ -13,7 +13,7 @@ var UserCtrller = BaseController.extend({
 		//校验用户 ticket 等，这里先省略
 		
 		//异步初始化玩家信息，获取用户信息后回复 login 请求
-		this.app.login(data.uid,userSession);
+		this.app.login(data.uid,userSession,packetSerId);
 	}
 });
 
