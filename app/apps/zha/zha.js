@@ -11,6 +11,8 @@ var ZhaServer = GameServer.extend({
 		this.tableIdEnd = this.roomConfig.tableIdEnd;
 		this.state = "init";
 		this.tableId = this.tableIdBegin;
+
+		this.maxUserPerTable = this.roomConfig.maxUserPerTable;
 	},
 	run : function() {
 		//connect lobby
@@ -23,9 +25,24 @@ var ZhaServer = GameServer.extend({
 		// };
 		
 	},
+	findTable : function(preferTableId){
+		if (preferTableId!=0) {
+			if (F.isset(this.tables[preferTableId])) {
+				return preferTableId;
+			}
+		}
+
+		for (var k in this.tables) {
+			if (this.tables[k].userCounter<this.maxUserPerTable) {
+				return k;
+			}
+		}
+		return this.createTable();
+
+	},
 
 	createTable : function() {
-		console.log("createTable for "+this.typ);
+		logger.info("createTable for "+this.typ);
 		var tableId = 0;
 		for (var i = this.tableIdBegin; i <= this.tableIdEnd; i++) {
 			if (this.tables[i]===undefined || this.tables[i]===null) {
@@ -35,17 +52,24 @@ var ZhaServer = GameServer.extend({
 		};
 		if (tableId==0) {
 			this.setErr("No new table id left");
-
+			
 			return false;
 		}
-		console.log("createTable as "+tableId);
+		logger.debug("createTable as "+tableId);
 		var Table = require('app/apps/zha/table');
 		this.tables[tableId] = new Table(tableId,this.roomConfig);
 		this.tables[tableId].run();
+		return tableId;
 	},
 	deleteTable : function(tableId) {
 		this.tables[tableId].stop();
 		this.tables[tableId] = null;
+	},
+	joinTable : function(tableId,userSession){
+		this.onlineUsers[userSession.uid] = userSession;
+		userSession.joinTable(this.tables[tableId]);
+		this.tables[tableId].onJoinTable(userSession);
 	}
+
 });
 module.exports = ZhaServer;

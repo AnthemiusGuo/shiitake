@@ -28,7 +28,7 @@ var BaseServer = Class.extend({
 	},
 	setErr : function(msg){
 		this.errorInfo = msg;
-		console.log(this.id+"@"+this.typ+" : "+msg);
+		logger.warn(this.id+"@"+this.typ+" : "+msg);
 	},
 	run : function() {
 		
@@ -95,12 +95,12 @@ var BaseServer = Class.extend({
 		if (!utils.isAbsolute(path)) {
 			path = join(rootDir, path);
 		}
-		console.log("checking path for: "+path);
+		logger.debug("checking path for: "+path);
 		if (exists(path)) {
 			return true;
 		} 
 		path = path+".js";
-		console.log("checking path for: "+path);
+		logger.debug("checking path for: "+path);
 		
 		if (exists(path)) {
 			return true;
@@ -119,6 +119,7 @@ var BaseServer = Class.extend({
 				this.uidClientMapping[uid] = userSession;
 				userSession.isLogined = true;
 				userSession.uid = uid;
+				userSession.userInfo = data;
 				userSession.send("user","login",1,packetId,data)
 			} else {
 				userSession.send("user","login",ret,packetId,{e:"登录失败"})

@@ -34,7 +34,9 @@ var Table = TablePublic.extend({
 
 	    this.robot_users = {};
 	    this.robot_zhuang_users = [];
-	},
+
+
+	}
 
 });
 

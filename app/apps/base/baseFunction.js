@@ -26,3 +26,4 @@ exports.supplant = function (s,o) {
 exports.trim = function (s) {
     return s.replace(/^\s*(\S*(?:\s+\S+)*)\s*$/, "$1");
 };
+

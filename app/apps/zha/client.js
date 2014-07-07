@@ -6,6 +6,9 @@ var ZhaClient = BaseClient.extend({
 	login : function(uid) {
 		this.isLogined = true;
 		this.uid = uid;
+	},
+	joinTable : function(table) {
+		this.table = table;
 	}
 });
 module.exports = ZhaClient;

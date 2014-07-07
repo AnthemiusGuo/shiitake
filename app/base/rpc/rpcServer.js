@@ -8,7 +8,7 @@ var rpcServer = Class.extend({
 	// }
 	init : function (typ,serverConfigs) {
 		
-		console.log("create rpc for "+typ)
+		logger.info("create rpc for "+typ)
 		this.typ = typ;
 		this.runTyp = serverConfigs.runTyp;
 		this.rpcMode = serverConfigs.rpcMode;
@@ -17,7 +17,7 @@ var rpcServer = Class.extend({
 		this.requestId = 0;
 	},
 	run : function(method,id,params){
-		console.log(method,id,params);
+		logger.debug(method,id,params);
 	}
 });
 

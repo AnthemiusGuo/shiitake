@@ -22,12 +22,13 @@ var BaseDM = Class.extend({
 			this.data[this.cacheCategory][method] = {};
 		}
 		this.data[this.cacheCategory][method][key] = value;
-	}
+	},
 	getCacheHash : function(method,key,cb_bingo,cb_noCache){
 		if (!this.useCache) {
 			cb_noCache(-1);
 			return;
 		}
+		var self = this;
 		var real_key = this.getCacheKey(method,key);
 		kvdb.hgetall(real_key, function(err, reply) {
 		    if (err) {
@@ -39,8 +40,8 @@ var BaseDM = Class.extend({
 		    	return;
 		    }
 		    //hit cache!!!
-		    this.setData(method,key,reply);
-		    console.log(method,key,"hit cache!!!");
+		    self.setData(method,key,reply);
+		    logger.debug(method,key,"hit cache!!!");
 		    cb_bingo(1,reply);
 		});
 	},
@@ -81,7 +82,7 @@ var BaseDM = Class.extend({
 	    		}
 	    		var info = rows[0];
 
-	    		// console.log("db get user",userInfo);
+	    		// logger.debug("db get user",userInfo);
 	    		self.setCacheHash(cacheMethod,id,info);
 	    		cb(1,info);
 	    	});

@@ -1,6 +1,9 @@
 global.Class = require('node.class');
 global.utils = require('app/apps/base/baseFunction');
 global.F = require('phpjs');
+var log4js = require('log4js');
+log4js.replaceConsole();
+global.logger = log4js.getLogger();
 
 global.rootDir = __dirname;
 var config = require('app/config/config')
@@ -20,8 +23,31 @@ process.argv.forEach(function (val, index, array) {
     var kv = val.replace(/\-\-/,'').split('=');
     init_param[kv[0]] = kv[1];
 });
-console.log(init_param);
 
+global.logger = log4js.getLogger(init_param.typ);
+logger.debug("App Begin");
+
+//log4js.loadAppender('console');
+// log4js.loadAppender('file');
+//log4js.addAppender(log4js.appenders.file('logs/cheese.log'), 'cheese');
+
+// var logger = log4js.getLogger('cheese');
+logger.setLevel('ALL');
+// OFF nothing is logged
+// FATAL   fatal errors are logged
+// ERROR   errors are logged
+// WARN    warnings are logged
+// INFO    infos are logged
+// DEBUG   debug infos are logged
+// TRACE   traces are logged
+// ALL everything is logged
+
+// logger.trace('Entering cheese testing');
+// logger.debug('Got cheese.');
+// logger.info('Cheese is Gouda.');
+// logger.warn('Cheese is quite smelly.');
+// logger.error('Cheese is too ripe!');
+// logger.fatal('Cheese was breeding ground for listeria.');
 /*prepare*/
 var WebSocketServer = require('ws').Server;
 var ClientUser = require('app/apps/'+init_param.typ+'/client')
@@ -44,7 +70,7 @@ if (config.mysql!=undefined) {
     // db.query('SELECT 1 + 1 AS solution', function(err, rows, fields) {
     //   if (err) throw err;
 
-    //   console.log('The solution is: ', rows[0].solution);
+    //   logger.debug('The solution is: ', rows[0].solution);
     // });
 
     // db.end();
@@ -59,7 +85,7 @@ if (config.redis!=undefined) {
     // kvdb.select(3, function() { /* ... */ });
 
     kvdb.on("error", function (err) {
-        console.log("Error " + err);
+        logger.debug("Error " + err);
     });
     //client.mset(["test keys 1", "test val 1", "test keys 2", "test val 2"], function (err, res) {});
 
@@ -70,22 +96,22 @@ if (config.redis!=undefined) {
 
     //client.get("missingkey", function(err, reply) {
     // reply is null when the key is missing
-    //    console.log(reply);
+    //    logger.debug(reply);
     //});
 
     // kvdb.set("string key", "string val", redis.print);
     // kvdb.hset("hash key", "hashtest 1", "some value", redis.print);
     // kvdb.hset(["hash key", "hashtest 2", "some other value"], redis.print);
     // kvdb.hkeys("hash key", function (err, replies) {
-    //     console.log(replies.length + " replies:");
+    //     logger.debug(replies.length + " replies:");
     //     replies.forEach(function (reply, i) {
-    //         console.log("    " + i + ": " + reply);
+    //         logger.debug("    " + i + ": " + reply);
     //     });
     //     kvdb.quit();
     // });
 }
 
-console.log("init rpc calling...");
+logger.debug("init rpc calling...");
 var RPC = require('app/base/rpc');
 global.rpc = new RPC(config.servers,init_param.typ);
 
@@ -105,15 +131,15 @@ if (serversInfo.frontend) {
     frontServer.userClients = {};
 
     frontServer.on('connection', function(socket) {
-        console.log('someone connected');
+        logger.debug('someone connected');
         var clientSession = new ClientUser(socket);
         logicApp.onNewUserSocketConnect(clientSession,socket);
         socket.on('message', function(message) {
-            console.log(message);
+            logger.debug(message);
             logicApp.onClientMsg(socket,message)
         })
         .on('close',function(code, message){
-            console.log("===closeclient");
+            logger.debug("===closeclient");
             logicApp.onCloseUserSocketConnect(socket);
             clientSession.onCloseSocket();
             clientSession = null;
@@ -126,13 +152,13 @@ global.backServer = new WebSocketServer({port: serversInfo.port});
 backServer.rpcClients = {};
 
 backServer.on('connection', function(socket) {
-    console.log('someone connected');
+    logger.debug('someone connected');
     
     socket.on('message', function(message) {
         logicApp.onRPCMsg()
     })
     .on('close',function(code, message){
-        console.log("===closeclient");
+        logger.debug("===closeclient");
         
     });
 });

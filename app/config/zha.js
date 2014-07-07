@@ -12,5 +12,5 @@ if (PRODUCTION==="production") {
 }
 
 config.servers = {
-	"zha-server-1":{"roomId":1,"minEntry":1000,"maxEntry":10000,"tableIdBegin":1,"tableIdEnd":99}
+	"zha-server-1":{"roomId":1,"minEntry":1000,"maxEntry":10000,"tableIdBegin":1,"tableIdEnd":99,"maxUserPerTable":100}
 }

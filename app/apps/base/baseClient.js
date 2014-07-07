@@ -31,6 +31,28 @@ var BaseClient = Class.extend({
 		//kick 后并不立刻删除本对象，只是置为不连接。
 		//因为 table 中可能这个用户对象还在使用，在 table 本局结束后再遍历所有 null 的对象，等待 GC 回收内存。
 		
+	},
+	getUserShowInfo : function() {
+		if (!F.isset(this.userInfo)){
+			//返回错误信息
+			return {
+				uid : this.userInfo.uid,
+				uname : '[未知]',
+				avatar_url : '',
+				avatar_id : 0,
+				level : 0,
+				vip_level: 0
+			}
+
+		}
+		return {
+			uid : this.userInfo.uid,
+			uname : this.userInfo.uname,
+			avatar_url : this.userInfo.avatar_url,
+			avatar_id : this.userInfo.avatar_id,
+			level : this.userInfo.level,
+			vip_level: this.userInfo.vip_level,
+		}
 	}
 });
 

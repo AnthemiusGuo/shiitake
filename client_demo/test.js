@@ -61,6 +61,7 @@ function sendGame(category,method,data) {
 	gameSocket.send(JSON.stringify(packet));
 	packetId++;
 	sendLog("game",packet);
+	consoleLog("game","send "+category+" "+method);
 }
 
 var User = function(uid){
@@ -74,12 +75,30 @@ User.prototype.onGameMsg_unknown = function(category,method,data,ts,packetId,ret
 	recvLog("game","unkonwn package!!!");
 }
 
+var Table = function(tableId){
+	this.tableId = tableId;
+}
+Table.prototype.onGameMsg_Start = function(category,method,data,ts,packetId,ret) {
+	consoleLog("game","开始洗牌/摇骰子");
+	sendGame('game','joinTable',{prefer:0})
+}
+Table.prototype.onGameMsg_unknown = function(category,method,data,ts,packetId,ret) {
+	consoleLog("game","unkonwn package!!!");
+}
+
 var Game = function(tableId){
 	this.tableId = tableId;
 }
+Game.prototype.onGameMsg_joinTable = function(category,method,data,ts,packetId,ret) {
+	consoleLog("game","加入牌局/牌桌 : "+data.tableId);
+}
+Game.prototype.onGameMsg_unknown = function(category,method,data,ts,packetId,ret) {
+	consoleLog("game","unkonwn package!!!");
+}
 
 user = new User(21);
-
+table = new Table(1);
+game = new Game(1);
 // Write your code in the same way as for native WebSocket:
 var lobbySocket = new WebSocket("ws://127.0.0.1:3000");
 lobbySocket.onopen = function() {
@@ -107,6 +126,20 @@ gameSocket.onmessage = function(e) {
 			user.onMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
 		} else {
 			user["onGameMsg_"+msg.m](msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+		}
+	} else if (msg.c == "error") {
+		consoleLog("game",'<span class="red">'+msg.d.e+'</span>');
+	} else if (msg.c == "table") {
+		if (typeof(table["onGameMsg_"+msg.m])=="undefined") {
+			table.onMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+		} else {
+			table["onGameMsg_"+msg.m](msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+		}
+	} else if (msg.c == "game") {
+		if (typeof(game["onGameMsg_"+msg.m])=="undefined") {
+			game.onMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+		} else {
+			game["onGameMsg_"+msg.m](msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
 		}
 	}
 };
