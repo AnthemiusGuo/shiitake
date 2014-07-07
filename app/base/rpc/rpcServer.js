@@ -13,7 +13,7 @@ var rpcServer = Class.extend({
 		this.runTyp = serverConfigs.runTyp;
 		this.rpcMode = serverConfigs.rpcMode;
 		this.rpcProtocol = serverConfigs.rpcProtocol;
-		this.requestQueue = [];
+		this.requestQueue = {};
 		this.requestId = 0;
 	},
 	run : function(method,id,params){

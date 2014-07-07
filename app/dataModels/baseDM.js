@@ -22,7 +22,7 @@ var BaseDM = Class.extend({
 			this.data[this.cacheCategory][method] = {};
 		}
 		this.data[this.cacheCategory][method][key] = value;
-	}
+	},
 	getCacheHash : function(method,key,cb_bingo,cb_noCache){
 		if (!this.useCache) {
 			cb_noCache(-1);
