@@ -2,9 +2,13 @@ global.Class = require('node.class');
 global.utils = require('app/apps/base/baseFunction');
 global.F = require('phpjs');
 var log4js = require('log4js');
+<<<<<<< HEAD
 log4js.replaceConsole();
 global.logger = log4js.getLogger();
 
+=======
+global.logger = log4js.getLogger();
+>>>>>>> FETCH_HEAD
 global.rootDir = __dirname;
 var config = require('app/config/config')
 //refernce https://github.com/mranney/node_redis/
@@ -12,8 +16,8 @@ var config = require('app/config/config')
 
 //nohup node app.js --typ=lobby --id=lobby-server-1 & >room_1.out
 
-// var init_param = {typ:"lobby",id:"lobby-server-1"};
-var init_param = {typ:"zha",id:"zha-server-1"};
+var init_param = {typ:"lobby",id:"lobby-server-1"};
+// var init_param = {typ:"zha",id:"zha-server-1"};
 
 process.argv.forEach(function (val, index, array) {
     if (index<2){
@@ -111,17 +115,24 @@ if (config.redis!=undefined) {
     // });
 }
 
+<<<<<<< HEAD
 logger.debug("init rpc calling...");
 var RPC = require('app/base/rpc');
 global.rpc = new RPC(config.servers,init_param.typ);
+=======
+>>>>>>> FETCH_HEAD
 
-//e.g.
-//rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});
 
 var LogicApp = require('app/apps/'+init_param.typ+'/'+init_param.typ);
 global.logicApp = new LogicApp(init_param.typ,init_param.id,config.servers[init_param.typ].serverList[init_param.id]); 
 logicApp.run();
 
+console.log("init rpc calling...");
+var RPC = require('app/base/rpc');
+global.rpc = new RPC(config.servers,init_param.typ);
+
+//e.g.
+//rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});
 
 var serversInfo = config.servers[init_param.typ].serverList[init_param.id];
 

@@ -52,7 +52,12 @@ if (PRODUCTION==="production") {
 	    	"rpcMode":"upstream",
 	    	"rpcProtocol":"web",
 	    	"serverList" : {
-	    		"main":{"id":"main","url":"http://127.0.0.1"}
+	    		//id 字段, 如果信令category命中id字段则使用这个字段的服务器,否则都用main服务器
+	    		//不可重复,该功能不应该支持负载均衡,如果要负载均衡在web端实现
+	    		//interfaceTyp:ma, method,action模式,
+	    		//ciquery,CI框架query模式
+	    		// "main":{"id":"main","host":"127.0.0.1","url":"/yet-another-mcard-game/card/server/server.php",paramTyp:"POST",interfaceTyp:"ma"}
+	    		"main":{"id":"main","host":"127.0.0.1","url":"/shiitake/shiitake/web_demo/server.php",paramTyp:"POST",interfaceTyp:"ma"}
 	    	}
 	    	
 	    },
