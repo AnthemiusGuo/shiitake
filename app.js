@@ -1,14 +1,11 @@
 global.Class = require('node.class');
 global.utils = require('app/apps/base/baseFunction');
 global.F = require('phpjs');
+
 var log4js = require('log4js');
-<<<<<<< HEAD
 log4js.replaceConsole();
 global.logger = log4js.getLogger();
 
-=======
-global.logger = log4js.getLogger();
->>>>>>> FETCH_HEAD
 global.rootDir = __dirname;
 var config = require('app/config/config')
 //refernce https://github.com/mranney/node_redis/
@@ -114,13 +111,6 @@ if (config.redis!=undefined) {
     //     kvdb.quit();
     // });
 }
-
-<<<<<<< HEAD
-logger.debug("init rpc calling...");
-var RPC = require('app/base/rpc');
-global.rpc = new RPC(config.servers,init_param.typ);
-=======
->>>>>>> FETCH_HEAD
 
 
 var LogicApp = require('app/apps/'+init_param.typ+'/'+init_param.typ);
