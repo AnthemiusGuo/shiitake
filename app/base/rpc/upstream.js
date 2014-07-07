@@ -3,17 +3,21 @@ var LobbyRPC = RpcServer.extend({
 	init : function (typ,serverConfigs){
 		this._super(typ,serverConfigs);
 		this.allServers = serverConfigs.serverList;	
+		for (var k in this.allServers) {
+			this.allServers[k].ready = false;
+		}
 	},
 	connect : function(){
 		for (var k in this.allServers) {
-			this.runCommnd("rpc","login",{},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
+			this.allServers[k].ready = false;
+			this.runCommand("rpc","login",{},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
 		}
 	},
-	onMsgAck: function(data,req) {
+	onMsgAck: function(ret,data,req) {
 		logger.debug("unkown package!",data);
 	},
-	onLoginAck: function(data,req) {
-		if (data.ret==1) {
+	onLoginAck: function(ret,data,req) {
+		if (ret>0) {
 
 		} else {
 			logger.error("connect upstream server failed for ")
@@ -31,7 +35,7 @@ var LobbyRPC = RpcServer.extend({
 		}
 	},
 
-	runCommnd : function(category,method,id,params,cb){
+	runCommand : function(category,method,id,params,cb){
 		this.requestId++;
 		var reqId = this.requestId;
 		this.requestQueue[reqId] = {reqId:reqId,category:category,method:method,id:id,params:params};
@@ -45,7 +49,7 @@ var LobbyRPC = RpcServer.extend({
 		if (thisServer.paramTyp=="POST") {
 			var url = this._buildReqUrl(thisServer.interfaceTyp,thisServer.url,
 				category,method);
-			logger.debug("req web:"+url);
+			logger.debug("req web: http://"+thisServer.host+url);
 			this.sendHttpPost(reqId,thisServer.host,url,params,cb);
 		} else {
 			var url = this._buildReqUrl(thisServer.interfaceTyp,thisServer.url,
@@ -70,11 +74,12 @@ var LobbyRPC = RpcServer.extend({
 		    },
 		    agent:false
 		};
+		var self = this;
 		var req = http.request(options, function(res) {
 			logger.debug('STATUS: ' + res.statusCode);
-  			logger.debug('HEADERS: ' + JSON.stringify(res.headers));
   			if (res.statusCode!=200) {
-  				cb(-1,err,this.requestQueue[reqId]);
+  				cb(0-res.statusCode,JSON.stringify(res.headers),self.requestQueue[reqId]);
+  				return;
   			}
 		    res.setEncoding('utf8');
 		    var total_data = '';
@@ -85,19 +90,19 @@ var LobbyRPC = RpcServer.extend({
 		    		logger.debug(total_data);
 		    		var data = JSON.parse(total_data);
 		    		if (cb==undefined) {
-		    			this.onMsgAck(1,data,this.requestQueue[reqId]);
+		    			self.onMsgAck(1,data,self.requestQueue[reqId]);
 		    		} else {
-		    			cb(1,data,this.requestQueue[reqId]);
+		    			cb(1,data,self.requestQueue[reqId]);
 		    		}
-		    		this.requestQueue[reqId] = null;
+		    		self.requestQueue[reqId] = null;
 		    	} 
 		    	catch(err){
 		    		if (cb==undefined) {
-		    			this.onMsgAck(-1,err,this.requestQueue[reqId]);
+		    			self.onMsgAck(-1,err,self.requestQueue[reqId]);
 		    		} else {
-		    			cb(-1,err,this.requestQueue[reqId]);
+		    			cb(-1,err,self.requestQueue[reqId]);
 		    		}
-		    		this.requestQueue[reqId] = null;
+		    		self.requestQueue[reqId] = null;
 		    	}
 		    	
 		    });
