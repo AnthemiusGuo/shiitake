@@ -14,14 +14,20 @@ var BaseServer = Class.extend({
 		this.info = info;
 		this.errorInfo = "";
 
-		this.packageRouter = {};
+		this.packageClientRouter = {};
+		this.packageRPCRouter = {};
 
 		this.socketUserMapping = {};
 		this.uidClientMapping = {};
 		
+		this.socketRPCMapping = {};
+		this.serverIdClientMapping = {};
 
 		this.connectUserCount = 0;
 		this.loginedUserCount = 0;
+
+		this.connectRPCCount = 0;
+		this.loginedRPCCount = 0;
 	},
 	getErr : function(){
 		return this.errorInfo;
@@ -37,6 +43,10 @@ var BaseServer = Class.extend({
 		this.socketUserMapping[socket] = user;
 		this.connectUserCount++;
 	},
+	onNewRPCSocketConnect : function(user,socket) {
+		this.socketRPCMapping[socket] = user;
+		this.connectRPCCount++;
+	},
 	onCloseUserSocketConnect : function(socket) {
 		if (this.socketUserMapping[socket].isLogined) {
 			var uid = this.socketUserMapping[socket].uid;
@@ -44,6 +54,15 @@ var BaseServer = Class.extend({
 		}
 		this.socketUserMapping[socket] = null;
 		this.connectUserCount--;
+	},
+	onCloseRPCSocketConnect : function(socket) {
+		if (this.socketRPCMapping[socket].isLogined) {
+			var serverId = this.socketRPCMapping[socket].serverId;
+			this.serverIdClientMapping[serverId] = null;
+			this.loginedRPCCount--;
+		}
+		this.socketRPCMapping[socket] = null;
+		this.connectRPCCount--;
 	},
 	onClientMsg : function(socket,msg) {
 		var package = JSON.parse(msg);
@@ -58,7 +77,7 @@ var BaseServer = Class.extend({
 		var data = package.d;
 		var ts = package.t;
 		var ret = package.r;
-		if (!F.isset(this.packageRouter[category])) {
+		if (!F.isset(this.packageClientRouter[category])) {
 			if (this.lookup('app/controllers/client/'+this.typ+'/'+category)) {
 				var Category = require('app/controllers/client/'+this.typ+'/'+category);				
 			} else {
@@ -69,9 +88,9 @@ var BaseServer = Class.extend({
 					return;
 				}
 			}
-			this.packageRouter[category] = new Category(this);
+			this.packageClientRouter[category] = new Category(this);
 		}
-		if (!F.isset(this.packageRouter[category][method])) {
+		if (!F.isset(this.packageClientRouter[category][method])) {
 			this.sendToClientErrBySocket(socket,-9997,"信令不存在",packetSerId);
 			return;
 		}
@@ -81,7 +100,45 @@ var BaseServer = Class.extend({
 		}
 		var userSession = this.socketUserMapping[socket];
 
-		this.packageRouter[category][method](userSession,ret,ts,data,packetSerId);
+		this.packageClientRouter[category][method](userSession,ret,ts,data,packetSerId);
+	},
+	onRPCMsg : function(socket,msg) {
+		var package = JSON.parse(msg);
+		if (!F.isset(package.c) || !F.isset(package.m) || !F.isset(package.d) || !F.isset(package.t) || !F.isset(package.s) || !F.isset(package.r)) {
+			var packetSerId = package.s;
+			this.sendToClientErrBySocket(socket,-9999,"信令格式有误",packetSerId);
+			return;
+		}
+		var packetSerId = package.s;
+		var category = package.c;
+		var method = package.m;
+		var data = package.d;
+		var ts = package.t;
+		var ret = package.r;
+		if (!F.isset(this.packageRPCRouter[category])) {
+			if (this.lookup('app/controllers/rpc/'+this.typ+'/'+category)) {
+				var Category = require('app/controllers/rpc/'+this.typ+'/'+category);				
+			} else {
+				if (this.lookup('app/controllers/rpc/base/'+category)) {
+					var Category = require('app/controllers/rpc/base/'+category);				
+				} else {
+					this.sendToClientErrBySocket(socket,-9998,"信令不存在",packetSerId);
+					return;
+				}
+			}
+			this.packageRPCRouter[category] = new Category(this);
+		}
+		if (!F.isset(this.packageRPCRouter[category][method])) {
+			this.sendToClientErrBySocket(socket,-9997,"信令不存在",packetSerId);
+			return;
+		}
+		if (!F.isset(this.socketRPCMapping[socket])) {
+			this.sendToClientErrBySocket(socket,-9996,"Session丢失",packetSerId);
+			return;
+		}
+		var userSession = this.socketRPCMapping[socket];
+
+		this.packageRPCRouter[category][method](userSession,ret,ts,data,packetSerId);
 	},
 	sendToClientBySocket : function(socket,category,method,ret,packetId,data){
 		var ts =  new Date().getTime();
@@ -127,6 +184,15 @@ var BaseServer = Class.extend({
 		}.bind(this));
 
 		//剩下的行为子类实现
+	},
+	rpc_login : function(typ,id,userSession,packetId) {
+		if (F.isset(this.serverIdClientMapping[typ+"/"+id])) {
+			this.serverIdClientMapping[typ+"/"+id].kickUser();
+		}
+		this.serverIdClientMapping[typ+"/"+id] = userSession;
+		userSession.isLogined = true;
+		userSession.serverId = typ+"/"+id;
+		userSession.send("user","login",1,packetId,{});
 	}
 });
 

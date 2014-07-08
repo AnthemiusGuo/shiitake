@@ -51,7 +51,8 @@ logger.setLevel('ALL');
 // logger.fatal('Cheese was breeding ground for listeria.');
 /*prepare*/
 var WebSocketServer = require('ws').Server;
-var ClientUser = require('app/apps/'+init_param.typ+'/client')
+var ClientUser = require('app/apps/'+init_param.typ+'/client');
+var ClientRPC = require('app/apps/base/rpcClient');
 
 DmManager = require('app/dataModels/dataModelManager');
 global.dmManager = new DmManager();
@@ -153,13 +154,16 @@ global.backServer = new WebSocketServer({port: serversInfo.port});
 backServer.rpcClients = {};
 
 backServer.on('connection', function(socket) {
-    logger.debug('someone connected');
-    
+    logger.debug('some server connected');
+    var clientSession = new ClientRPC(socket);
+    logicApp.onNewRPCSocketConnect(clientSession,socket);
     socket.on('message', function(message) {
-        logicApp.onRPCMsg()
+        logicApp.onRPCMsg(socket,message)
     })
     .on('close',function(code, message){
         logger.debug("===closeclient");
-        
+        logicApp.onCloseRPCSocketConnect(socket);
+        clientSession.onCloseSocket();
+        clientSession = null;
     });
 });

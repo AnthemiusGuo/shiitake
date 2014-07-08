@@ -25,8 +25,6 @@ var WebSocketRPC = RpcServer.extend({
 				this.runCommand("rpc","login",{serverId:this.allServers[k].id},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
 			}
 			// this.runCommand(k,"rpc_login",{},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
-
-			
 		}
 		if (someOneNotReady==false) {
 			clearInterval(this.connectTick);
@@ -34,7 +32,7 @@ var WebSocketRPC = RpcServer.extend({
 		}
 	},
 	doConnect : function(k) {
-		logger.info("try to connect to rpc server:"+this.typ)
+		logger.info("try to connect to rpc server:"+this.typ,this.allServers[k].id);
 		//"lobby-server-1":{"id":"lobby-server-1","host":"127.0.0.1","port":3001,"clientPort":3000,"frontend":true}
 		if (this.allServers[k].connected) {
 			return;
@@ -43,11 +41,13 @@ var WebSocketRPC = RpcServer.extend({
 		var WebSocketClient = require('ws');
 		var self = this;
 		try {
-			this.allServers[k].socket = new WebSocketClient('ws://'+this.allServers[k].host+':'+this.allServers[k].port);
-			this.allServers[k].socket.on('open', function() {
-				logger.info("websocket server "+self.typ+"/"+self.allServers[k].id+" connect!!!");
+			var thisServer = this.allServers[k];
+			this.allServers[k].socket = new WebSocketClient('ws://'+thisServer.host+':'+thisServer.port);
+
+			thisServer.socket.on('open', function() {
+				logger.info("websocket server "+self.typ+"/"+thisServer.id+" connect!!!");
 				self.allServers[k].connected = true;
-				self.runCommand("rpc","login",{serverId:self.allServers[k].id},{typ:logicApp.typ,id:logicApp.id},self.onLoginAck.bind(self));
+				self.runCommand("rpc","login",{serverId:thisServer.id},{typ:logicApp.typ,id:logicApp.id,serverId:thisServer.id},self.onLoginAck.bind(self));
 			    
 			}).on('message', function(data, flags) {
 				logger.debug(data);
@@ -156,11 +156,12 @@ var WebSocketRPC = RpcServer.extend({
 	onLoginAck: function(ret,data,req) {
 
 		if (ret>0) {
-			logger.info("websocket server "+this.typ+"/"+this.allServers[k].id+" ready!!!");
-			this.allServers[req.category].ready = true;
+			var id = req.params.serverId;
+			logger.info("websocket server "+this.typ+"/"+id+" ready!!!");
+			this.allServers[id].ready = true;
 			setTimeout(this.ping.bind(this),20000);
 		} else {
-			logger.error("connect upstream server failed for "+req.category+"/"+req.method);
+			logger.error("login socket rpc server failed for "+req.params.typ+"/"+req.params.id);
 			logger.error("error code "+ret);
 		}
 	},
