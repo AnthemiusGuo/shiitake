@@ -16,8 +16,6 @@ var ZhaServer = GameServer.extend({
 	},
 	run : function() {
 		//connect lobby
-		rpc.run("lobby","serverLogin",{typ:this.typ},{id:this.id,typ:this.typ});
-
 		//init 1 table at least
 		this.createTable();
 		// for (var i = this.tableIdBegin; i <= this.tableIdEnd; i++) {

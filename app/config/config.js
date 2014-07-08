@@ -71,32 +71,32 @@ if (PRODUCTION==="production") {
 	    	}
 	    	
 	    },
-	    "yao":{
-	    	"runTyp":"nodejs",
-	    	"rpcMode":"game",
-	    	"rpcProtocol":"websocket",
-	    	"serverList" : {
-	    		"yao-server-1":{"id":"yao-server-1","host":"127.0.0.1","port":3021,"clientPort":3020,"frontend":true}
-	    	}
+	    // "yao":{
+	    // 	"runTyp":"nodejs",
+	    // 	"rpcMode":"game",
+	    // 	"rpcProtocol":"websocket",
+	    // 	"serverList" : {
+	    // 		"yao-server-1":{"id":"yao-server-1","host":"127.0.0.1","port":3021,"clientPort":3020,"frontend":true}
+	    // 	}
 	    	
-	    },
-	    "robot":{
-	    	"runTyp":"nodejs",
-	    	"rpcMode":"robot",
-	    	"rpcProtocol":"websocket",
-	    	"serverList" : {
-	    		"robot-server-1":{"id":"robot-server-1","host":"127.0.0.1","port":3031,"clientPort":3030,"frontend":false}
-	    	}
+	    // },
+	    // "robot":{
+	    // 	"runTyp":"nodejs",
+	    // 	"rpcMode":"robot",
+	    // 	"rpcProtocol":"websocket",
+	    // 	"serverList" : {
+	    // 		"robot-server-1":{"id":"robot-server-1","host":"127.0.0.1","port":3031,"clientPort":3030,"frontend":false}
+	    // 	}
 	    	
-	    },
-	    "samples":{
-	    	"runTyp":"rpc",//其他服务器上的应用, 不再runner管理,不关心是nodejs的还是c++的
-	    	"rpcMode":"game",
-	    	"rpcProtocol":"websocket",
-	    	"serverList" : {
-	    		"samples-server-1":{"id":"samples-server-1","host":"127.0.0.1","port":3031,"clientPort":3030,"frontend":false}
-	    	}
+	    // },
+	    // "samples":{
+	    // 	"runTyp":"rpc",//其他服务器上的应用, 不再runner管理,不关心是nodejs的还是c++的
+	    // 	"rpcMode":"game",
+	    // 	"rpcProtocol":"websocket",
+	    // 	"serverList" : {
+	    // 		"samples-server-1":{"id":"samples-server-1","host":"127.0.0.1","port":3031,"clientPort":3030,"frontend":false}
+	    // 	}
 	    	
-	    },
+	    // },
 	};
 }

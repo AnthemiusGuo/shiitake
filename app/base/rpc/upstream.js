@@ -6,23 +6,17 @@ var LobbyRPC = RpcServer.extend({
 		for (var k in this.allServers) {
 			this.allServers[k].ready = false;
 		}
+		this.allReady = false;
 	},
 	connect : function(){
+		//依次执行各个categaory的注册, 使用配置的id作为请求的名字来自动路由到不同服务器
 		for (var k in this.allServers) {
 			this.allServers[k].ready = false;
-			this.runCommand("rpc","login",{},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
+			this.runCommand(k,"rpc_login",{},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
 		}
+		this.allReady = true;
 	},
-	onMsgAck: function(ret,data,req) {
-		logger.debug("unkown package!",data);
-	},
-	onLoginAck: function(ret,data,req) {
-		if (ret>0) {
-
-		} else {
-			logger.error("connect upstream server failed for ")
-		}
-	},
+	
 	_buildReqUrl : function(InterfaceTyp, baseUrl,category,method,param){
 		var paramInfo = "";
 		if (typeof(param)!="undefined") {
@@ -40,10 +34,19 @@ var LobbyRPC = RpcServer.extend({
 		var reqId = this.requestId;
 		this.requestQueue[reqId] = {reqId:reqId,category:category,method:method,id:id,params:params};
 
+		//寻找服务器
 		if (!F.isset(this.allServers[category])) {
 			var thisServer = this.allServers.main;
 		} else {
 			var thisServer = this.allServers[category];
+		}
+
+		if (method!= "rpc_login" && method!="ping") {
+			if (thisServer.ready==false) {
+				cb(-999,"服务器尚未准备好",self.requestQueue[reqId]);
+				self.requestQueue[reqId] = null;
+  				return;
+			}
 		}
 
 		if (thisServer.paramTyp=="POST") {
@@ -140,6 +143,34 @@ var LobbyRPC = RpcServer.extend({
 		    });
 		});
 		req.end();
+	},
+	ping : function(){
+		//依次执行各个categaory的ping, 使用配置的id作为请求的名字来自动路由到不同服务器
+		for (var k in this.allServers) {
+			this.allServers[k].ready = false;
+			this.runCommand(k,"ping",{},{typ:logicApp.typ,id:logicApp.id},this.onPong.bind(this));
+		}
+	},
+	onMsgAck: function(ret,data,req) {
+		logger.debug("unkown package!",ret,req,data);
+	},
+	onLoginAck: function(ret,data,req) {
+
+		if (ret>0) {
+			this.allServers[req.category].ready = true;
+			this.pingTick = setInterval(this.ping.bind(this),20000);
+			logger.info("upstream server "+req.category+" ready!!!");
+		} else {
+			logger.error("connect upstream server failed for "+req.category+"/"+req.method);
+			logger.error("error code "+ret);
+		}
+	},
+	onPong : function(ret,data,req) {
+		if (ret>0) {
+
+		} else {
+			this.allServers[req.category].ready = false;
+		}
 	}
 
 });

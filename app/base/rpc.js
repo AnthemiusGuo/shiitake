@@ -10,6 +10,21 @@ var rpc = Class.extend({
 		    this.rpcServers[serverTyp] = thisServer;
 		    this.rpcServers[serverTyp].connect();
 		}
+		this.allReady = false;
+		this.checkReadyTick = setTimeout(this.checkRPCReady.bind(this),1000);
+	},
+	checkRPCReady : function(){
+
+		for (var serverTyp in this.rpcServers) {
+		    if (this.rpcServers[serverTyp].allReady==false) {
+		    	this.allReady = false;
+		    	break;
+		    }
+		}
+		if (this.allReady) {
+			clearTimeout(this.checkReadyTick);
+			logger.info("All RPC server Ready!!");
+		}
 	},
 	//typ: 类似lobby,zha,之类的远程调用
 	//method: 调用方法名
