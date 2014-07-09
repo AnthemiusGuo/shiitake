@@ -9,5 +9,12 @@ var DataModelManager = Class.extend({
 		}
 		this.dms[category]["get"+method](param,cb);
 	},
+	getKVDBGlobal: function(k){
+		var key = "global/"+k;
+		
+	},
+	setKVDBGlobal: function(k,v){
+
+	}
 });
 module.exports = DataModelManager;

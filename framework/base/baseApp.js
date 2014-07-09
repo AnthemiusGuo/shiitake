@@ -19,6 +19,9 @@ var BaseApp = Class.extend({
 	run : function() {
 		
 	},
+	checkStatus : function() {
+
+	},
 	onMsg : function(rpcOrClient,socket,msg) {
 		var package = JSON.parse(msg);
 		if (!F.isset(package.c) || !F.isset(package.m) || !F.isset(package.d) || !F.isset(package.t) || !F.isset(package.s) || !F.isset(package.r)) {

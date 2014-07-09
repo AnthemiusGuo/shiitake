@@ -25,7 +25,10 @@ process.argv.forEach(function (val, index, array) {
     init_param[kv[0]] = kv[1];
 });
 
-global.logger = log4js.getLogger(init_param.typ);
+global.appTyp = init_param.typ;
+global.appId = init_param.id;
+
+global.logger = log4js.getLogger(appTyp);
 logger.info("App Begin");
 
 //log4js.loadAppender('console');
@@ -52,7 +55,7 @@ logger.setLevel('ALL');
 /*prepare*/
 var WebSocketServer = require('ws').Server;
 
-var ClientUser = require('app/apps/'+init_param.typ+'/client');
+var ClientUser = require('app/apps/'+appTyp+'/client');
 var ClientRPC = require('framework/base/rpcClient');
 
 DmManager = require('framework/base/dataModelManager');
@@ -115,18 +118,18 @@ if (config.redis!=undefined) {
 }
 
 
-var LogicApp = require('app/apps/'+init_param.typ+'/'+init_param.typ);
-global.logicApp = new LogicApp(init_param.typ,init_param.id,config.servers[init_param.typ].serverList[init_param.id]); 
+var LogicApp = require('app/apps/'+appTyp+'/'+appTyp);
+global.logicApp = new LogicApp(appTyp,appId,config.servers[appTyp].serverList[appId]); 
 logicApp.run();
 
 console.log("init rpc calling...");
 var RPC = require('framework/base/rpcManager');
-global.rpc = new RPC(config.servers,init_param.typ);
+global.rpc = new RPC(config.servers,appTyp);
 
 //e.g.
 //rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});
 
-var serversInfo = config.servers[init_param.typ].serverList[init_param.id];
+var serversInfo = config.servers[appTyp].serverList[appId];
 
 if (serversInfo.frontend) {
     //支持对用户接入,监听用户端口
