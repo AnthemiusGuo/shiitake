@@ -1,4 +1,4 @@
-var GameCtrller = require("app/controllers/client/base/game");
+var GameCtrller = require("app/controllers/user/base/game");
 var TheGameCtrller = GameCtrller.extend({
 	init : function (app){
 		this._super(app);

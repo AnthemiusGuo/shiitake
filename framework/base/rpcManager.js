@@ -1,20 +1,21 @@
-var rpc = Class.extend({
+var RpcManager = Class.extend({
 	init : function (servers,skipTyp){
 		this.rpcServers = {};
 		for (var serverTyp in servers) {
 		    if (serverTyp === skipTyp) {
 		        continue;
 		    }
-		    var RpcServer = require('app/base/rpc/'+servers[serverTyp].rpcMode);
-		    var thisServer = new RpcServer(serverTyp,servers[serverTyp]);    
-		    this.rpcServers[serverTyp] = thisServer;
-		    this.rpcServers[serverTyp].connect();
+		    if (servers[serverTyp].rpcProtocol!="none") {
+		    	var RpcServer = require('app/rpc/'+servers[serverTyp].rpcMode);
+			    var thisServer = new RpcServer(serverTyp,servers[serverTyp]);    
+			    this.rpcServers[serverTyp] = thisServer;
+			    this.rpcServers[serverTyp].connect();
+		    }
 		}
 		this.allReady = false;
 		this.checkReadyTick = setTimeout(this.checkRPCReady.bind(this),1000);
 	},
 	checkRPCReady : function(){
-
 		for (var serverTyp in this.rpcServers) {
 		    if (this.rpcServers[serverTyp].allReady==false) {
 		    	this.allReady = false;
@@ -35,4 +36,4 @@ var rpc = Class.extend({
 	}
 });
 
-module.exports = rpc;
+module.exports = RpcManager;

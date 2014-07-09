@@ -1,4 +1,4 @@
-var BaseClient = require('app/apps/base/baseClient');
+var BaseClient = require('framework/base/baseClient');
 var LobbyClient = BaseClient.extend({
 	init : function(socket) {
 		this._super(socket);

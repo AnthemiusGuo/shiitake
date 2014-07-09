@@ -80,7 +80,23 @@ var Table = function(tableId){
 }
 Table.prototype.onGameMsg_Start = function(category,method,data,ts,packetId,ret) {
 	consoleLog("game","开始洗牌/摇骰子");
-	sendGame('game','joinTable',{prefer:0})
+	// sendGame('game','joinTable',{prefer:0})
+}
+Table.prototype.onGameMsg_join = function(category,method,data,ts,packetId,ret) {
+	consoleLog("game","广播:玩家"+data.uname+"加入游戏");
+	// sendGame('game','joinTable',{prefer:0})
+}
+Table.prototype.onGameMsg_WaitBet = function(category,method,data,ts,packetId,ret) {
+	consoleLog("game","请下注");
+	// sendGame('game','joinTable',{prefer:0})
+}
+Table.prototype.onGameMsg_WaitOpen = function(category,method,data,ts,packetId,ret) {
+	consoleLog("game","等待开牌");
+	// sendGame('game','joinTable',{prefer:0})
+}
+Table.prototype.onGameMsg_AfterOpen = function(category,method,data,ts,packetId,ret) {
+	consoleLog("game","开牌展示!");
+	// sendGame('game','joinTable',{prefer:0})
 }
 Table.prototype.onGameMsg_unknown = function(category,method,data,ts,packetId,ret) {
 	consoleLog("game","unkonwn package!!!");

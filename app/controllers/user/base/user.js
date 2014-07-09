@@ -1,4 +1,4 @@
-var BaseController = require("app/controllers/client/base/baseController");
+var BaseController = require("framework/base/baseController");
 var UserCtrller = BaseController.extend({
 	init : function (app){
 		this._super(app);

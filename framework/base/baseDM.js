@@ -41,7 +41,7 @@ var BaseDM = Class.extend({
 		    }
 		    //hit cache!!!
 		    self.setData(method,key,reply);
-		    logger.debug(method,key,"hit cache!!!");
+		    logger.trace(method,key,"hit cache!!!");
 		    cb_bingo(1,reply);
 		});
 	},

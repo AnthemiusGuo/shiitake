@@ -1,5 +1,5 @@
 global.Class = require('node.class');
-global.utils = require('app/apps/base/baseFunction');
+global.utils = require('framework/base/baseFunction');
 global.F = require('phpjs');
 
 var log4js = require('log4js');
@@ -26,7 +26,7 @@ process.argv.forEach(function (val, index, array) {
 });
 
 global.logger = log4js.getLogger(init_param.typ);
-logger.debug("App Begin");
+logger.info("App Begin");
 
 //log4js.loadAppender('console');
 // log4js.loadAppender('file');
@@ -51,10 +51,11 @@ logger.setLevel('ALL');
 // logger.fatal('Cheese was breeding ground for listeria.');
 /*prepare*/
 var WebSocketServer = require('ws').Server;
-var ClientUser = require('app/apps/'+init_param.typ+'/client');
-var ClientRPC = require('app/apps/base/rpcClient');
 
-DmManager = require('app/dataModels/dataModelManager');
+var ClientUser = require('app/apps/'+init_param.typ+'/client');
+var ClientRPC = require('framework/base/rpcClient');
+
+DmManager = require('framework/base/dataModelManager');
 global.dmManager = new DmManager();
 
 /*prepare mysql*/
@@ -119,7 +120,7 @@ global.logicApp = new LogicApp(init_param.typ,init_param.id,config.servers[init_
 logicApp.run();
 
 console.log("init rpc calling...");
-var RPC = require('app/base/rpc');
+var RPC = require('framework/base/rpcManager');
 global.rpc = new RPC(config.servers,init_param.typ);
 
 //e.g.
@@ -135,14 +136,14 @@ if (serversInfo.frontend) {
     frontServer.on('connection', function(socket) {
         logger.debug('someone connected');
         var clientSession = new ClientUser(socket);
-        logicApp.onNewUserSocketConnect(clientSession,socket);
+        logicApp.userSocketManager.onNewSocketConnect(clientSession,socket);
         socket.on('message', function(message) {
-            logger.debug(message);
-            logicApp.onClientMsg(socket,message)
+            logger.trace(message);
+            logicApp.onMsg("user",socket,message)
         })
         .on('close',function(code, message){
-            logger.debug("===closeclient");
-            logicApp.onCloseUserSocketConnect(socket);
+            logger.debug("===closed user client");
+            logicApp.userSocketManager.onCloseSocketConnect(socket);
             clientSession.onCloseSocket();
             clientSession = null;
         });
@@ -154,15 +155,15 @@ global.backServer = new WebSocketServer({port: serversInfo.port});
 backServer.rpcClients = {};
 
 backServer.on('connection', function(socket) {
-    logger.debug('some server connected');
+    logger.info('some server connected');
     var clientSession = new ClientRPC(socket);
-    logicApp.onNewRPCSocketConnect(clientSession,socket);
+    logicApp.rpcSocketManager.onNewSocketConnect(clientSession,socket);
     socket.on('message', function(message) {
-        logicApp.onRPCMsg(socket,message)
+        logicApp.onMsg("rpc",socket,message)
     })
     .on('close',function(code, message){
-        logger.debug("===closeclient");
-        logicApp.onCloseRPCSocketConnect(socket);
+        logger.info("===closed rpc client");
+        logicApp.rpcSocketManager.onCloseSocketConnect(socket);
         clientSession.onCloseSocket();
         clientSession = null;
     });

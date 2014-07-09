@@ -17,7 +17,7 @@ var rpcServer = Class.extend({
 		this.requestId = 0;
 	},
 	run : function(method,id,params){
-		logger.debug(method,id,params);
+		logger.trace(method,id,params);
 	}
 });
 

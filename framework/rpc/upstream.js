@@ -1,4 +1,4 @@
-var RpcServer = require('app/base/rpc/rpcServer');
+var RpcServer = require('framework/rpc/rpcServer');
 var LobbyRPC = RpcServer.extend({
 	init : function (typ,serverConfigs){
 		this._super(typ,serverConfigs);
@@ -30,6 +30,8 @@ var LobbyRPC = RpcServer.extend({
 	},
 
 	runCommand : function(category,method,id,params,cb){
+		logger.debug("websocket","runCommand",category,method,id,params);
+
 		this.requestId++;
 		var reqId = this.requestId;
 		this.requestQueue[reqId] = {reqId:reqId,category:category,method:method,id:id,params:params};
@@ -52,12 +54,12 @@ var LobbyRPC = RpcServer.extend({
 		if (thisServer.paramTyp=="POST") {
 			var url = this._buildReqUrl(thisServer.interfaceTyp,thisServer.url,
 				category,method);
-			logger.debug("req web: http://"+thisServer.host+url);
+			logger.trace("req web: http://"+thisServer.host+url);
 			this.sendHttpPost(reqId,thisServer.host,url,params,cb);
 		} else {
 			var url = this._buildReqUrl(thisServer.interfaceTyp,thisServer.url,
 				category,method,params);
-			logger.debug("req web:"+url);
+			logger.trace("req web:"+url);
 			this.sendHttpGet(reqId,thisServer.host,url,cb);
 		}
 		
@@ -79,7 +81,7 @@ var LobbyRPC = RpcServer.extend({
 		};
 		var self = this;
 		var req = http.request(options, function(res) {
-			logger.debug('STATUS: ' + res.statusCode);
+			logger.trace('STATUS: ' + res.statusCode);
   			if (res.statusCode!=200) {
   				cb(0-res.statusCode,JSON.stringify(res.headers),self.requestQueue[reqId]);
   				return;
@@ -90,7 +92,7 @@ var LobbyRPC = RpcServer.extend({
 		    	total_data += data;
 		    }).on('end',function(){
 		    	try {
-		    		logger.debug(total_data);
+		    		logger.trace("web return:",total_data);
 		    		var data = JSON.parse(total_data);
 		    		if (cb==undefined) {
 		    			self.onMsgAck(1,data,self.requestQueue[reqId]);
@@ -125,7 +127,7 @@ var LobbyRPC = RpcServer.extend({
 		    },
 		    agent:false
 		};
-		console.log('fetching '+url);
+		logger.trace('fetching '+url);
 		var req = http.request(options, function(res) {
 		    res.setEncoding('utf8');
 		    var total_data = '';
@@ -152,13 +154,13 @@ var LobbyRPC = RpcServer.extend({
 		}
 	},
 	onMsgAck: function(ret,data,req) {
-		logger.debug("unkown package!",ret,req,data);
+		logger.trace("unkown package!",ret,req,data);
 	},
 	onLoginAck: function(ret,data,req) {
 
 		if (ret>0) {
 			this.allServers[req.category].ready = true;
-			this.pingTick = setInterval(this.ping.bind(this),20000);
+			this.pingTick = setInterval(this.ping.bind(this),300000);
 			logger.info("upstream server "+req.category+" ready!!!");
 		} else {
 			logger.error("connect upstream server failed for "+req.category+"/"+req.method);

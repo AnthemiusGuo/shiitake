@@ -1,4 +1,4 @@
-var Table = require('app/apps/base/baseTable');
+var Table = require('app/base/baseTable');
 //公共压注型桌子
 var TablePublic = Table.extend({
 	init : function(tableId,roomConfig) {
@@ -6,7 +6,7 @@ var TablePublic = Table.extend({
 		this.matchId = 0;
 		this.stateConfig = {"Start":{nextState:"WaitBet",timer:1},
 							"WaitBet":{nextState:"WaitOpen",timer:20},
-							"WaitOpen":{nextState:"AfterOpen",timer:20},
+							"WaitOpen":{nextState:"AfterOpen",timer:2},
 							"AfterOpen":{nextState:"Start",timer:20}};
 		this.robotList = {};
 		
@@ -27,11 +27,11 @@ var TablePublic = Table.extend({
 	},
 	waitNextState : function() {
 		var self = this;
-		logger.debug("timer:",this.stateConfig[this.state].timer);
+		logger.trace("timer:",this.stateConfig[this.state].timer);
 
 		this.mainTimer = setTimeout(
 		        function(){
-		        	logger.debug("timer triggerd",self.state,self.stateConfig[self.state].nextState);
+		        	logger.trace("timer triggerd",self.state,self.stateConfig[self.state].nextState);
 		        	self["onState"+self.stateConfig[self.state].nextState]();
 		        },this.stateConfig[this.state].timer*1000);
 	},
@@ -50,7 +50,7 @@ var TablePublic = Table.extend({
 	onStateStart : function(){
 		this.state = "Start";
 		this.waitNextState();
-		logger.debug("onStateStart");
+		logger.trace("onStateStart");
 
 		//没啥要做，给用户广播下
 		this.doBroadcast("table","Start",1,0,{});
@@ -59,7 +59,7 @@ var TablePublic = Table.extend({
 		this.state = "WaitBet";
 		this.waitNextState();
 		this.broadcastBet();
-		logger.debug("onStateWaitBet");
+		logger.trace("onStateWaitBet");
 		this.doBroadcast("table","WaitBet",1,0,{});
 	},
 	onStateWaitOpen : function(){
@@ -69,13 +69,13 @@ var TablePublic = Table.extend({
 		}
 		this.state = "WaitOpen";
 		this.waitNextState();
-		logger.debug("onStateWaitOpen");
+		logger.trace("onStateWaitOpen");
 		this.doBroadcast("table","WaitOpen",1,0,{});
 	},
 	onStateAfterOpen : function(){
 		this.state = "AfterOpen";
 		this.waitNextState();
-		logger.debug("onStateAfterOpen");
+		logger.trace("onStateAfterOpen");
 		this.doBroadcast("table","AfterOpen",1,0,{});
 	},
 	onJoinTable : function(userSession) {
@@ -90,7 +90,6 @@ var TablePublic = Table.extend({
 			allUsersInfo[this.userList[k].uid] = this.userList[k].getUserShowInfo();
 		}
 		userSession.send("game","joinTable",1,0,{tableId:this.tableId,usersIn:allUsersInfo});
-		logger.debug(userSession);
 		this.doOptBroadcast("table","join",1,0,userSession.getUserShowInfo());
 	}
 });

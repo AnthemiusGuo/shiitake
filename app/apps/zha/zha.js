@@ -1,4 +1,4 @@
-var GameServer = require('app/apps/base/game');
+var GameServer = require('app/base/game');
 var ZhaServer = GameServer.extend({
 	init : function(typ,id,info) {
 		this._super(typ,id,info);
@@ -53,7 +53,7 @@ var ZhaServer = GameServer.extend({
 			
 			return false;
 		}
-		logger.debug("createTable as "+tableId);
+		logger.info("createTable as "+tableId);
 		var Table = require('app/apps/zha/table');
 		this.tables[tableId] = new Table(tableId,this.roomConfig);
 		this.tables[tableId].run();

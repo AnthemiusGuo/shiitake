@@ -1,4 +1,4 @@
-var RpcServer = require('app/base/rpc/rpcServer');
+var RpcServer = require('framework/rpc/rpcServer');
 var WebSocketRPC = RpcServer.extend({
 	init : function (typ,serverConfigs){
 		this._super(typ,serverConfigs);
@@ -50,7 +50,7 @@ var WebSocketRPC = RpcServer.extend({
 				self.runCommand("rpc","login",{serverId:thisServer.id},{typ:logicApp.typ,id:logicApp.id,serverId:thisServer.id},self.onLoginAck.bind(self));
 			    
 			}).on('message', function(data, flags) {
-				logger.debug(data);
+				logger.trace(data);
 			    var msg = JSON.parse(data);
 			    var reqId = msg.s;
 			    if (F.isset(self.requestQueue[reqId])) {
@@ -90,11 +90,13 @@ var WebSocketRPC = RpcServer.extend({
 		} else {
 
 		}
+		return null;
 	},
 	errorOnSend : function(ret,errorInfo,req){
 		logger.error(ret,errorInfo,req);
 	},
 	runCommand : function(category,method,id,data,cb){
+		logger.debug("websocket","runCommand",category,method,id,data);
 		this.requestId++;
 		var reqId = this.requestId;
 		var req = {reqId:reqId,category:category,method:method,id:id,params:data,cb:cb};
@@ -106,9 +108,13 @@ var WebSocketRPC = RpcServer.extend({
 		
 		//寻找服务器
 		var thisServer = this.findServer(id);
-
+		if (thisServer==null) {
+			cb(-1001,"没有找到合适的服务器路由",req);
+			return;
+		}
 		if (thisServer.connected==false){
 			cb(-1000,"服务器尚未链接",req);
+			return;
 		}
 		if (method!= "login" && method!="ping") {
 			if (thisServer.ready==false) {
@@ -140,8 +146,7 @@ var WebSocketRPC = RpcServer.extend({
 	ping : function(){
 		//依次执行各个categaory的ping, 使用配置的id作为请求的名字来自动路由到不同服务器
 		for (var k in this.allServers) {
-			this.allServers[k].ready = false;
-			this.runCommand(k,"ping",{},{typ:logicApp.typ,id:logicApp.id},this.onPong.bind(this));
+			this.runCommand("rpc","ping",{serverId:this.allServers[k].id},{typ:logicApp.typ,id:logicApp.id,serverId:this.allServers[k].id},this.onPong.bind(this));
 		}
 	},
 	onReqTimeout : function(reqId){
@@ -159,17 +164,18 @@ var WebSocketRPC = RpcServer.extend({
 			var id = req.params.serverId;
 			logger.info("websocket server "+this.typ+"/"+id+" ready!!!");
 			this.allServers[id].ready = true;
-			setTimeout(this.ping.bind(this),20000);
+			setTimeout(this.ping.bind(this),300000);
 		} else {
 			logger.error("login socket rpc server failed for "+req.params.typ+"/"+req.params.id);
 			logger.error("error code "+ret);
 		}
 	},
 	onPong : function(ret,data,req) {
+		var id = req.params.serverId;
 		if (ret>0) {
 			
 		} else {
-			this.allServers[req.category].ready = false;
+			this.allServers[id].ready = false;
 		}
 	}
 });

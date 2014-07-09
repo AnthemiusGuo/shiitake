@@ -1,4 +1,4 @@
-var BaseDM = require('app/dataModels/baseDM');
+var BaseDM = require('framework/base/baseDM');
 var UserDM = BaseDM.extend({
 	init : function() {
 		this._super();

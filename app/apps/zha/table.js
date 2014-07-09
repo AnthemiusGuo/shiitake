@@ -1,8 +1,8 @@
-var TablePublic = require('app/apps/base/tablePublic');
+var TablePublic = require('app/base/tablePublic');
 var ZhaPoker = require('app/apps/zha/zhaPoker');
 var Table = TablePublic.extend({
 	init : function(tableId,roomConfig) {
-		this._super();
+		this._super(tableId,roomConfig);
 		//四门押注
 		this.bet_info = [0,0,0,0];
 		//用户押注

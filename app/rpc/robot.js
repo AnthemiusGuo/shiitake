@@ -1,4 +1,4 @@
-var RpcServer = require('app/base/rpc/websocket');
+var RpcServer = require('framework/rpc/websocket');
 var RobotRPC = RpcServer.extend({
 
 });

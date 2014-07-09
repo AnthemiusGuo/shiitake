@@ -98,5 +98,14 @@ if (PRODUCTION==="production") {
 	    // 	}
 	    	
 	    // },
+	    "samples2":{
+	    	"runTyp":"nodejs",
+	    	"rpcMode":"game",
+	    	"rpcProtocol":"none",//无RPC调用提供
+	    	"serverList" : {
+	    		"samples2-server-1":{"id":"samples2-server-1","host":"127.0.0.1","clientPort":3030,"frontend":true}
+	    	}
+	    	
+	    },
 	};
 }
