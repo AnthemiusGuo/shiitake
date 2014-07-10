@@ -13,8 +13,10 @@ var rpcServer = Class.extend({
 		this.runTyp = serverConfigs.runTyp;
 		this.rpcMode = serverConfigs.rpcMode;
 		this.rpcProtocol = serverConfigs.rpcProtocol;
+		this.rpcMustConnect = serverConfigs.rpcMustConnect;
 		this.requestQueue = {};
 		this.requestId = 0;
+		this.allReady = false;
 	},
 	run : function(method,id,params){
 		logger.trace(method,id,params);

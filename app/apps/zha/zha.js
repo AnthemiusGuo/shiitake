@@ -15,7 +15,10 @@ var ZhaServer = GameServer.extend({
 		this.maxUserPerTable = this.roomConfig.maxUserPerTable;
 	},
 	run : function() {
-		//connect lobby
+		this._super();
+	},
+	onAllReady: function() {
+		this._super();
 		//init 1 table at least
 		this.createTable();
 		// for (var i = this.tableIdBegin; i <= this.tableIdEnd; i++) {

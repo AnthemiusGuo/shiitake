@@ -13,18 +13,18 @@ var RpcManager = Class.extend({
 		    }
 		}
 		this.allReady = false;
-		this.checkReadyTick = setTimeout(this.checkRPCReady.bind(this),1000);
 	},
 	checkRPCReady : function(){
+		this.allReady = true;
 		for (var serverTyp in this.rpcServers) {
-		    if (this.rpcServers[serverTyp].allReady==false) {
+		    if (this.rpcServers[serverTyp].allReady==false && this.rpcServers[serverTyp].rpcMustConnect) {
 		    	this.allReady = false;
+		    	logger.info("RpcManager:"+serverTyp+" not ready!!");
 		    	break;
 		    }
 		}
 		if (this.allReady) {
-			clearTimeout(this.checkReadyTick);
-			logger.info("All RPC server Ready!!");
+			logger.info("All Must Connect RPC server Ready!!");
 		}
 	},
 	//typ: 类似lobby,zha,之类的远程调用

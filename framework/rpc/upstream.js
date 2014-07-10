@@ -8,13 +8,24 @@ var LobbyRPC = RpcServer.extend({
 		}
 		this.allReady = false;
 	},
+	checkStatus : function() {
+		var someOneNotReady = false;
+		for (var k in this.allServers) {
+			if (this.allServers[k].ready) {
+				continue;
+			}
+			someOneNotReady = true;
+		}
+		if (someOneNotReady==false) {
+			this.allReady = true;
+		}
+	},
 	connect : function(){
 		//依次执行各个categaory的注册, 使用配置的id作为请求的名字来自动路由到不同服务器
 		for (var k in this.allServers) {
 			this.allServers[k].ready = false;
 			this.runCommand(k,"rpc_login",{},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
-		}
-		this.allReady = true;
+		}		
 	},
 	
 	_buildReqUrl : function(InterfaceTyp, baseUrl,category,method,param){
@@ -162,6 +173,7 @@ var LobbyRPC = RpcServer.extend({
 			this.allServers[req.category].ready = true;
 			this.pingTick = setInterval(this.ping.bind(this),300000);
 			logger.info("upstream server "+req.category+" ready!!!");
+			this.checkStatus();
 		} else {
 			logger.error("connect upstream server failed for "+req.category+"/"+req.method);
 			logger.error("error code "+ret);

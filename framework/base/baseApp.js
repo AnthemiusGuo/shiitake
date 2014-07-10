@@ -8,6 +8,13 @@ var BaseApp = Class.extend({
 
 		this.userSocketManager = new BaseSocketManager(this,"user",this.typ);
 		this.rpcSocketManager = new BaseSocketManager(this,"rpc",this.typ);
+		this.allReady = false;
+		this.firstAllReady = false;
+		this.checkReadyTick = setInterval(this.checkStatus.bind(this),3000);
+
+		this.startTS = new Date().getTime();
+		this.readyTS = 0;
+		dmManager.setHashKeyValueKVDBGlobal("srvSta/"+this.typ,this.id,0);
 	},
 	getErr : function(){
 		return this.errorInfo;
@@ -20,6 +27,37 @@ var BaseApp = Class.extend({
 		
 	},
 	checkStatus : function() {
+		if (rpc.allReady===false) {
+			logger.info("checkStatus rpc not ready");
+			this.allReady = false;
+			rpc.checkRPCReady();
+			return;
+		} 
+		if (db.allReady===false) {
+			logger.info("checkStatus db not ready");
+			this.allReady = false;
+			return;
+		} 
+		if (kvdb.allReady===false) {
+			logger.info("checkStatus kvdb not ready");
+			this.allReady = false;
+			return;
+		} 
+
+		this.allReady = true;
+		clearInterval(this.checkReadyTick);
+		logger.info("All server Ready!!");
+
+		if (this.firstAllReady==false) {
+			this.firstAllReady = true;
+			this.onAllReady();
+		}
+	},
+	onAllReady : function() {
+		this.readyTS = new Date().getTime();
+		dmManager.setHashKeyValueKVDBGlobal("srvSta/"+this.typ,this.id,1);
+		dmManager.setHashKeyValueKVDBGlobal("srvRun/"+this.id,"readyTS",this.readyTS);
+		dmManager.setHashKeyValueKVDBGlobal("srvRun/"+this.id,"startTS",this.startTS);
 
 	},
 	onMsg : function(rpcOrClient,socket,msg) {
@@ -87,9 +125,9 @@ var BaseApp = Class.extend({
 		//剩下的行为子类实现
 	},
 	rpc_login : function(typ,id,userSession,packetId) {
-		logger.info("recv rpc login from ",typ+"/"+id,this.rpcSocketManager.idClientMapping[typ+"/"+id]);
+		logger.info("recv rpc login from ",typ+"/"+id);
 		if (F.isset(this.rpcSocketManager.idClientMapping[typ+"/"+id])) {
-			this.rpcSocketManager.idClientMapping[typ+"/"+id].kickUser();
+			this.rpcSocketManager.idClientMapping[typ+"/"+id].kickUser("sameUser");
 		}
 		this.rpcSocketManager.idClientMapping[typ+"/"+id] = userSession;
 		userSession.isLogined = true;

@@ -36,7 +36,7 @@ logger.info("App Begin");
 //log4js.addAppender(log4js.appenders.file('logs/cheese.log'), 'cheese');
 
 // var logger = log4js.getLogger('cheese');
-logger.setLevel('ALL');
+logger.setLevel('INFO');
 // OFF nothing is logged
 // FATAL   fatal errors are logged
 // ERROR   errors are logged
@@ -58,8 +58,6 @@ var WebSocketServer = require('ws').Server;
 var ClientUser = require('app/apps/'+appTyp+'/client');
 var ClientRPC = require('framework/base/rpcClient');
 
-DmManager = require('framework/base/dataModelManager');
-global.dmManager = new DmManager();
 
 /*prepare mysql*/
 if (config.mysql!=undefined) {
@@ -70,8 +68,16 @@ if (config.mysql!=undefined) {
       password : config.mysql.password,
       database : config.mysql.db,
     });
+    db.allReady = false;
 
-    db.connect();
+    db.connect(function(err) {
+        if (err) {
+            logger.error('mysql error connecting: ' + err.stack);
+            return;
+        }
+        db.allReady = true;
+        logger.info('mysql connected as id ' + db.threadId);
+    });
 
     // db.query('SELECT 1 + 1 AS solution', function(err, rows, fields) {
     //   if (err) throw err;
@@ -86,11 +92,13 @@ if (config.mysql!=undefined) {
 if (config.redis!=undefined) {
     var redis = require("redis");
     global.kvdb = redis.createClient();
-
+    kvdb.allReady = false;
     // if you'd like to select database 3, instead of 0 (default), call
     // kvdb.select(3, function() { /* ... */ });
-
-    kvdb.on("error", function (err) {
+    kvdb.on("connect", function () {
+        logger.info('redis connected');
+        kvdb.allReady = true;
+    }).on("error", function (err) {
         logger.debug("Error " + err);
     });
     //client.mset(["test keys 1", "test val 1", "test keys 2", "test val 2"], function (err, res) {});
@@ -117,15 +125,18 @@ if (config.redis!=undefined) {
     // });
 }
 
+DmManager = require('framework/base/dataModelManager');
+global.dmManager = new DmManager();
 
 var LogicApp = require('app/apps/'+appTyp+'/'+appTyp);
 global.logicApp = new LogicApp(appTyp,appId,config.servers[appTyp].serverList[appId]); 
-logicApp.run();
+
 
 console.log("init rpc calling...");
 var RPC = require('framework/base/rpcManager');
 global.rpc = new RPC(config.servers,appTyp);
 
+logicApp.run();
 //e.g.
 //rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});
 
@@ -138,7 +149,12 @@ if (serversInfo.frontend) {
 
     frontServer.on('connection', function(socket) {
         logger.debug('someone connected');
+
         var clientSession = new ClientUser(socket);
+        if (logicApp.allReady==false) {
+            clientSession.kickUser("serverNotReady");
+            return;
+        }
         logicApp.userSocketManager.onNewSocketConnect(clientSession,socket);
         socket.on('message', function(message) {
             logger.trace(message);

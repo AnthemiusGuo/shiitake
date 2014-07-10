@@ -43,6 +43,7 @@ if (PRODUCTION==="production") {
 	    	"runTyp":"nodejs",//nodejs 在本机启动,用于runner脚本
 	    	"rpcMode":"lobby",
 	    	"rpcProtocol":"websocket",
+	    	"rpcMustConnect" : true,
 	    	"serverList" : {
 	    		"lobby-server-1":{"id":"lobby-server-1","host":"127.0.0.1","port":3001,"clientPort":3000,"frontend":true}
 	    	}
@@ -51,6 +52,7 @@ if (PRODUCTION==="production") {
 	    	"runTyp":"web",//web 不再runner管理
 	    	"rpcMode":"upstream",
 	    	"rpcProtocol":"web",
+	    	"rpcMustConnect" : true,
 	    	"serverList" : {
 	    		//id 字段, 如果信令category命中id字段则使用这个字段的服务器,否则都用main服务器
 	    		//不可重复,该功能不应该支持负载均衡,如果要负载均衡在web端实现
@@ -65,6 +67,7 @@ if (PRODUCTION==="production") {
 	    	"runTyp":"nodejs",
 	    	"rpcMode":"game",
 	    	"rpcProtocol":"websocket",
+	    	"rpcMustConnect" : false,
 	    	"indexMode": ["room","money"],//different server for different room
 	    	"serverList" : {
 	    		"zha-server-1":{"id":"zha-server-1","host":"127.0.0.1","port":3011,"clientPort":3010,"frontend":true,"indexParam":{"roomId":1,"minEntry":1000,"maxEntry":10000}}

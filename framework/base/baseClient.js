@@ -23,8 +23,13 @@ var BaseClient = Class.extend({
 	sendErrPackFormat: function(packetId) {
 		this.sendErr(-9995,"信令格式有误",packetId);
 	},
-	kickUser : function() {
-		this.sendErr(-9000,"您的帐号已经在其他地方登录, 您已经被踢下线。");
+	kickUser : function(cause) {
+		if (cause=="sameUser") {
+			this.sendErr(-8999,"您的帐号已经在其他地方登录, 您已经被踢下线。");
+		} else if (cause=="serverNotReady") {
+			this.sendErr(-8998,"服务器尚未准备好,请稍后重试!");
+		}
+		
 		this.socket.close();
 		this.socket = null;
 		this.isConnect = false;
