@@ -82,6 +82,7 @@ var BaseApp = Class.extend({
 		var getRouteHandler = sockManager.initPackageRouter(category);
 		if (getRouteHandler<0) {
 			this.sendToClientErrBySocket(socket,getRouteHandler,"信令不存在",packetSerId);
+			return;
 		}
 		if (!F.isset(sockManager.packageRouter[category][method])) {
 			this.sendToClientErrBySocket(socket,-9997,"信令不存在",packetSerId);
@@ -116,6 +117,7 @@ var BaseApp = Class.extend({
 				userSession.isLogined = true;
 				userSession.id = uid;
 				userSession.userInfo = data;
+				userSession.onGetUserInfo();
 				userSession.send("user","login",1,packetId,data)
 			} else {
 				userSession.send("user","login",ret,packetId,{e:"登录失败"})

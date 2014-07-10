@@ -163,4 +163,6 @@ gameSocket.onclose = function() {
 	consoleLog("game","closed");
 };
 
-
+function send_bet(){
+	sendGame('table','bet',{men:1,point:1000})
+}

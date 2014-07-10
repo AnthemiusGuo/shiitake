@@ -9,7 +9,7 @@ var TablePublic = Table.extend({
 							"WaitOpen":{nextState:"AfterOpen",timer:2},
 							"AfterOpen":{nextState:"Start",timer:20}};
 		this.robotList = {};
-		
+		this.stateTime = 0;
 	},
 	run : function() {
 		
@@ -28,7 +28,7 @@ var TablePublic = Table.extend({
 	waitNextState : function() {
 		var self = this;
 		logger.trace("timer:",this.stateConfig[this.state].timer);
-
+		this.stateTime = new Date().getTime();
 		this.mainTimer = setTimeout(
 		        function(){
 		        	logger.trace("timer triggerd",self.state,self.stateConfig[self.state].nextState);
@@ -48,19 +48,21 @@ var TablePublic = Table.extend({
 		this.onStateStart();
 	},
 	onStateStart : function(){
+		this.matchId = new Date().getTime();
 		this.state = "Start";
 		this.waitNextState();
 		logger.trace("onStateStart");
 
-		//没啥要做，给用户广播下
-		this.doBroadcast("table","Start",1,0,{});
+		this.arrange_user_list();
+		this.doStart();
 	},
+
 	onStateWaitBet : function(){
 		this.state = "WaitBet";
 		this.waitNextState();
 		this.broadcastBet();
 		logger.trace("onStateWaitBet");
-		this.doBroadcast("table","WaitBet",1,0,{});
+		this.doWaitBet();
 	},
 	onStateWaitOpen : function(){
 		if (this.betTimer!==undefined && this.betTimer!==null) {
@@ -70,14 +72,27 @@ var TablePublic = Table.extend({
 		this.state = "WaitOpen";
 		this.waitNextState();
 		logger.trace("onStateWaitOpen");
-		this.doBroadcast("table","WaitOpen",1,0,{});
+		this.doWaitOpen();
 	},
 	onStateAfterOpen : function(){
 		this.state = "AfterOpen";
 		this.waitNextState();
 		logger.trace("onStateAfterOpen");
-		this.doBroadcast("table","AfterOpen",1,0,{});
+		this.doOpen();
 	},
+	doStart : function(){
+		logger.error("PLEASE OVERWRITE ME!!!");
+	},
+	doWaitBet : function(){
+		logger.error("PLEASE OVERWRITE ME!!!");
+	},
+	doWaitOpen : function(){
+		logger.error("PLEASE OVERWRITE ME!!!");
+	},
+	doOpen : function(){
+		logger.error("PLEASE OVERWRITE ME!!!");
+	},
+
 	onJoinTable : function(userSession) {
 		this._super(userSession);
 		if (this.state=="init") {
@@ -91,7 +106,8 @@ var TablePublic = Table.extend({
 		}
 		userSession.send("game","joinTable",1,0,{tableId:this.tableId,usersIn:allUsersInfo});
 		this.doOptBroadcast("table","join",1,0,userSession.getUserShowInfo());
-	}
+	},
+	
 });
 
 module.exports = TablePublic;

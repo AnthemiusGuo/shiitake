@@ -4,6 +4,7 @@ var BaseClient = Class.extend({
 		this.isConnect = true;
 		this.isLogined = false;
 		this.uid = 0;
+		this.supportZipSignal = false;
 		// this.userInfo = null;
 	},
 	onCloseSocket: function() {
@@ -58,6 +59,9 @@ var BaseClient = Class.extend({
 			level : this.userInfo.level,
 			vip_level: this.userInfo.vip_level,
 		}
+	},
+	onGetUserInfo: function(){
+		//防出错
 	}
 });
 

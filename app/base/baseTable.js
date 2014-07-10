@@ -16,6 +16,14 @@ var Table = Class.extend({
 		this.userList[userSession.uid] = userSession;
 		this.userCounter = Object.keys(this.userList).length;
 	},
+	//主动离桌,或主动踢人
+	onLeaveTable : function(userSession) {
+		
+	},
+	//断线,如果尚未离桌再调用离桌
+	onDisConnectUser : function(userSession) {
+		
+	},
 	doBroadcast : function(category,method,ret,packetId,data) {
 		for (var k in this.userList) {
 			this.userList[k].send(category,method,ret,packetId,data);
@@ -28,6 +36,9 @@ var Table = Class.extend({
 			this.worldChatLastSend = now;
 		}
 		//广播类，2秒钟最多一个，多了不广播;高优先级强制广播
+	},
+	arrange_user_list: function(){
+		//清理内存
 	}
 });
 module.exports = Table;

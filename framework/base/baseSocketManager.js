@@ -25,6 +25,7 @@ var BaseSocketManager = Class.extend({
 					
 				}
 			}
+			logger.info("final dir:"+dir);
 			this.packageRouter[category] = new Category(this.app);
 		}
 		return 1;
