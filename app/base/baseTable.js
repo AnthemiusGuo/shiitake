@@ -1,20 +1,12 @@
 var Table = Class.extend({
 	init : function(tableId,roomConfig) {
-		this.tableId = tableId;
-		this.roomConfig = roomConfig;
-		this.state = "init";
-		this.userList = {};
-		this.userCounter = 0;
-		this.worldChatQueue = [];
-		this.worldChatLastSend = 0;
+		logger.error("PLEASE OVERWRITE ME!!!");
 	},
 	run : function() {
 		
 	},
 	onJoinTable : function(userSession) {
-		logger.debug("user "+userSession.uid+" join the table");
-		this.userList[userSession.uid] = userSession;
-		this.userCounter = Object.keys(this.userList).length;
+		logger.error("PLEASE OVERWRITE ME!!!");
 	},
 	//主动离桌,或主动踢人
 	onLeaveTable : function(userSession) {

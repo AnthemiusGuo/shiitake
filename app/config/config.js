@@ -70,7 +70,7 @@ if (PRODUCTION==="production") {
 	    	"rpcMustConnect" : false,
 	    	"indexMode": ["room","money"],//different server for different room
 	    	"serverList" : {
-	    		"zha-server-1":{"id":"zha-server-1","host":"127.0.0.1","port":3011,"clientPort":3010,"frontend":true,"indexParam":{"roomId":1,"minEntry":1000,"maxEntry":10000}}
+	    		"zha-srv-1-1":{"id":"zha-srv-1-1","host":"127.0.0.1","port":3011,"clientPort":3010,"frontend":true,"indexParam":{"roomId":1,"minEntry":1000,"maxEntry":10000}}
 	    	}
 	    	
 	    },

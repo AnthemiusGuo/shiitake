@@ -2,7 +2,14 @@ var Table = require('app/base/baseTable');
 //公共压注型桌子
 var TablePublic = Table.extend({
 	init : function(tableId,roomConfig) {
-		this._super(tableId,roomConfig);
+		this.tableId = tableId;
+		this.roomConfig = roomConfig;
+		this.state = "init";
+		this.userList = {};
+		this.userCounter = 0;
+		this.worldChatQueue = [];
+		this.worldChatLastSend = 0;
+		
 		this.matchId = 0;
 		this.stateConfig = {"Start":{nextState:"WaitBet",timer:1},
 							"WaitBet":{nextState:"WaitOpen",timer:20},
@@ -94,7 +101,10 @@ var TablePublic = Table.extend({
 	},
 
 	onJoinTable : function(userSession) {
-		this._super(userSession);
+		logger.debug("user "+userSession.uid+" join the table");
+		this.userList[userSession.uid] = userSession;
+		this.userCounter = Object.keys(this.userList).length;
+
 		if (this.state=="init") {
 			//第一个进桌的驱动这个桌子开始跑循环
 			this.begin();
@@ -104,8 +114,8 @@ var TablePublic = Table.extend({
 		for (var k in this.userList) {
 			allUsersInfo[this.userList[k].uid] = this.userList[k].getUserShowInfo();
 		}
-		userSession.send("game","joinTable",1,0,{tableId:this.tableId,usersIn:allUsersInfo});
-		this.doOptBroadcast("table","join",1,0,userSession.getUserShowInfo());
+		userSession.send("game","joinTableAck",1,0,{tableId:this.tableId,usersIn:allUsersInfo});
+		this.doOptBroadcast("table","joinNot",1,0,userSession.getUserShowInfo());
 	},
 	
 });

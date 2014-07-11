@@ -105,7 +105,7 @@ var BaseApp = Class.extend({
 		this.sendToClientBySocket(socket,'error','packageErr',errorId,packetId,{e:errorInfo});
 	},
 	
-	login : function(uid,userSession,packetId) {
+	doLogin : function(uid,userSession,packetId) {
 		if (F.isset(this.userSocketManager.idClientMapping[uid])) {
 			this.userSocketManager.idClientMapping[uid].kickUser();
 		}
@@ -116,15 +116,14 @@ var BaseApp = Class.extend({
 				this.userSocketManager.idClientMapping[uid] = userSession;
 				userSession.isLogined = true;
 				userSession.id = uid;
+				userSession.uid = uid;
 				userSession.userInfo = data;
 				userSession.onGetUserInfo();
-				userSession.send("user","login",1,packetId,data)
+				userSession.send("user","loginAck",1,packetId,data)
 			} else {
-				userSession.send("user","login",ret,packetId,{e:"登录失败"})
+				userSession.send("user","loginAck",ret,packetId,{e:"登录失败"})
 			}
 		}.bind(this));
-
-		//剩下的行为子类实现
 	},
 	rpc_login : function(typ,id,userSession,packetId) {
 		logger.info("recv rpc login from ",typ+"/"+id);
@@ -134,7 +133,8 @@ var BaseApp = Class.extend({
 		this.rpcSocketManager.idClientMapping[typ+"/"+id] = userSession;
 		userSession.isLogined = true;
 		userSession.id = typ+"/"+id;
-		userSession.send("user","login",1,packetId,{});
+		userSession.serverId = typ+"/"+id;
+		userSession.send("user","loginAck",1,packetId,{});
 	},
 	rpc_ping : function(typ,id,userSession,packetId) {
 		var ts =  new Date().getTime();

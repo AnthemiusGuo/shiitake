@@ -1,8 +1,42 @@
 var TablePublic = require('app/base/tablePublic');
 var ZhaPoker = require('app/apps/zha/zhaPoker');
+var PokerUtils = require('app/base/pokerUtils');
+//豹子>同花顺>金花>顺子>对子>散牌
+//6 豹子> 5 同花顺> 4金花> 3顺子> 2对子> 1散牌
+//对子	对应“门”下注额的2倍
+    //顺子	对应“门”下注额的3倍
+    //金花	对应“门”下注额的4倍
+    //顺金	对应“门”下注额的6倍
+    //豹子	对应“门”下注额的10倍
+    //0 没用
+var config_paixing_names = {
+	"sanpai":1,
+	"duizi":2,
+	"shunzi":3,
+	"jinhua":4,
+	"tonghuashun":5,
+	"baozi":6
+};
+var config_zha_ratio = [1,1,2,3,4,6,10];
+
 var Table = TablePublic.extend({
 	init : function(tableId,roomConfig) {
 		this._super(tableId,roomConfig);
+
+		//this.roomConfig内容包括
+		// "roomId":11,
+		// 		'room_name' :'初级场',
+		// 	    'room_limit_low' :1000,
+		// 	    'room_limit_kick' :1000,
+		// 	    'room_limit_high' :2000000,
+		// 	    "tableIdBegin":1,"tableIdEnd":99,
+		// 	    "maxUserPerTable":100,
+		// 		'room_zhuang_limit_low' :100000,
+		// 	    'room_zhuang_limit_high' :43990000,
+		// 	    'ratio' :0.0783,
+		// 	    'room_desc' :'1千',
+		// 		'order':1
+
 		//四门押注
 		this.bet_info = [0,0,0,0];
 		//用户押注
@@ -36,6 +70,8 @@ var Table = TablePublic.extend({
 	    this.robot_zhuang_users = [];
 
 	    this.canBet = false;
+	    this.thisRoundFull = false;
+	    this.thisRoundLimit = 0;
 	},
 	doStart : function(){
 		this.canBet = false;
@@ -50,35 +86,411 @@ var Table = TablePublic.extend({
 	    this.user_bet_total = 0;
 
 		//没啥要做，给用户广播下
-		this.doBroadcast("table","Start",1,0,{cd:this.stateConfig[this.state].timer});
+		this.doBroadcast("table","StartNot",1,0,{cd:this.stateConfig[this.state].timer});
 	},
 	doWaitBet : function(){
 		//没啥要做，给用户广播下
 		this.canBet = true;
-		this.doBroadcast("table","WaitBet",1,0,{cd:this.stateConfig[this.state].timer});
+		this.doBroadcast("table","WaitBetNot",1,0,{cd:this.stateConfig[this.state].timer});
 	},
 	doWaitOpen : function(){
 		//没啥要做，给用户广播下
 		//用于安全周期而已
 		this.canBet = false;
-		this.doBroadcast("table","WaitOpen",1,0,{cd:this.stateConfig[this.state].timer});
+		this.doBroadcast("table","WaitOpenNot",1,0,{cd:this.stateConfig[this.state].timer});
+	},
+	_getIsOpenBig: function(isZhuang) {
+		if (isZhuang) {
+			var pos = 0;
+		} else {
+			var pos = 1;
+		}
+		var openBig = this.roomConfig.openBig;
+		// 'openBig':{
+					//概率基准为10000, 填值为万分之几,不填的表示全随机,
+					//例如填"baozi":[100,105],表示庄家1/100出豹子,闲家105/10000 出豹子,99%走普通随机,普通随机中当然也还有豹子的概率
+				// 	"baozi":[110,100],
+				// 	"tonghuashun":[1100.1000]
+				// }
+
+		var openBig2 = {};
+		var plus = 0;
+		for (var typ in openBig) {
+			var opportunity = openBig[typ][pos];
+			plus += opportunity;
+			openBig2[typ]=plus;
+		}
+		seed = F.rand(0,10000);
+		var bingo = "";
+		for (var typ in openBig2) {
+			var opportunity = openBig[typ];
+			if (seed<=opportunity) {
+				bingo = typ;
+				break;
+			}
+		}
+		return bingo;
 	},
 	doOpen : function(){
 		//开
-
+		var target_card = [];
+		this.target_card = {};
+		for (var i = 0; i < 52; i++) {
+			target_card.push(i);
+		};
+		//初始化一个已经打乱的牌
+		target_card = F.shuffle(target_card);
+		for (var i = 0; i < 52; i++) {
+			this.target_card["i"+target_card[i]]=1;
+		};
 		this.canBet = false;
+		
+		var tempPai = {};
+		for (var i = 0;i<=4;i++) {
+			//0 庄
+			//1-4 其他
+			if (i==0) {
+				var isZhuang = true;
+			} else {
+				var isZhuang = false;
+
+			}
+			var isOpenBig = this._getIsOpenBig(isZhuang);
+			if (isOpenBig!="") {
+				tempPai[i] = this._openCardsByOpenBig(isOpenBig);
+			} else {
+				tempPai[i] = this._openCardsByRealRandom();
+			}
+			logger.info("isOpenBig",isOpenBig,"tempPai",tempPai[i]);
+			for (var k in tempPai[i]) {
+				logger.info(PokerUtils.getPokerInfoBy54(tempPai[i][k]));
+			}
+		}
+		
+		// zhuang_pai = zha_analyse_typ(zhuang);
+		// xian1_pai = zha_analyse_typ(xian1);
+		// xian2_pai = zha_analyse_typ(xian2);
+		// xian3_pai = zha_analyse_typ(xian3);
+		// xian4_pai = zha_analyse_typ(xian4);
+
+		// result1 = get_win_loose(zhuang_pai,xian1_pai);
+		// result2 = get_win_loose(zhuang_pai,xian2_pai);
+		// result3 = get_win_loose(zhuang_pai,xian3_pai);
+		// result4 = get_win_loose(zhuang_pai,xian4_pai);
+		    
+		// json_rst['data']= array('pai'=>array(zhuang,xian1,xian2,xian3,xian4),
+		//                         'paixing'=>array(zhuang_pai[0],xian1_pai[0],xian2_pai[0],xian3_pai[0],xian4_pai[0]),
+		//                         'result'=>array(result1,result2,result3,result4)
+		//                         );
+	},
+	_openCardsByOpenBig : function(typ) {
+		if (typ=="sanpai"){
+			//sanpai并不强制散排,代价太大
+			return this._openCardsByRealRandom();			
+		}
+		if (typ=="duizi") {
+			var limit = 5;
+			for (var i = 0; i < limit; i++) {
+				var targetDuiziPai = F.rand(0,12);
+				var hua1 = F.rand(0,3);
+				var pai1 = PokerUtils.getPoker54ByInfo({typ:hua1,value:targetDuiziPai});
+
+				if (!F.isset(this.target_card["i"+pai1])) {
+					continue;
+				}
+				var hua2 = F.rand(0,3);
+				if (hua2==hua1) {
+					hua2 = hua1+1;
+					if (hua2>3){
+						hua2=0;
+					}
+				}
+				var pai2 = PokerUtils.getPoker54ByInfo({typ:hua1,value:targetDuiziPai});
+
+				if (!F.isset(this.target_card["i"+pai2])) {
+					continue;
+				}
+				var counter = 0;
+				var pai3 = -1;
+				for (var k in this.target_card) {
+					if (this.target_card[k] == null){
+						continue;
+					}
+					counter++;
+					if (counter>3) {
+						break;
+					}
+					if (k!=pai1 && k!=pai2) {
+						pai3 = k.substr(1);
+						break;
+					}
+				}
+				if (pai3==-1) {
+					continue;
+				}
+				return [pai1,pai2,pai3];
+
+			};
+			//冲突太多,找不到
+			return this._openCardsByRealRandom();	
+			
+		} else if (typ=="shunzi") {
+			var limit = 5;
+			for (var i = 0; i < limit; i++) {
+				//12 is A, 12,0,1 A,2,3是特殊允许
+				//强制去掉同花顺
+				var targetDuiziPai1 = F.rand(1,12);
+				var hua1 = F.rand(0,3);
+				var pai1 = PokerUtils.getPoker54ByInfo({typ:hua1,value:targetDuiziPai1});
+
+				if (!F.isset(this.target_card["i"+pai1])) {
+					continue;
+				}
+				if (targetDuiziPai1==1) {
+					var targetDuiziPai2 = 12;
+				} else {
+					var targetDuiziPai2 = targetDuiziPai1 - 1;
+				}
+				var hua2 = F.rand(0,3);
+				var pai2 = PokerUtils.getPoker54ByInfo({typ:hua2,value:targetDuiziPai2});
+
+				if (!F.isset(this.target_card["i"+pai2])) {
+					continue;
+				}
+				if (targetDuiziPai1==1) {
+					var targetDuiziPai3 = 0;
+				} else {
+					var targetDuiziPai3 = targetDuiziPai1 - 2;
+				}
+				var hua3 = F.rand(0,3);
+				if (hua3==hua2 && hua3==hua1) {
+					hua3 = F.rand(0,3);
+				}
+				if (hua3==hua2 && hua3==hua1) {
+					continue;
+				}
+				var pai3 = PokerUtils.getPoker54ByInfo({typ:hua3,value:targetDuiziPai3});
+
+				if (!F.isset(this.target_card["i"+pai3])) {
+					continue;
+				}
+				return [pai1,pai2,pai3];
+
+			};
+			//冲突太多,找不到
+			return this._openCardsByRealRandom();
+		} else if (typ=="jinhua") {
+
+			//冲突太多,找不到
+			return this._openCardsByRealRandom();
+
+		} else if (typ=="tonghuashun") {
+			var limit = 5;
+			for (var i = 0; i < limit; i++) {
+				//12 is A, 12,0,1 A,2,3是特殊允许
+				var targetDuiziPai1 = F.rand(1,12);
+				var hua1 = F.rand(0,3);
+				var pai1 = PokerUtils.getPoker54ByInfo({typ:hua1,value:targetDuiziPai1});
+
+				if (!F.isset(this.target_card["i"+pai1])) {
+					continue;
+				}
+				if (targetDuiziPai1==1) {
+					var targetDuiziPai2 = 12;
+				} else {
+					var targetDuiziPai2 = targetDuiziPai1 - 1;
+				}
+				var pai2 = PokerUtils.getPoker54ByInfo({typ:hua1,value:targetDuiziPai2});
+
+				if (!F.isset(this.target_card["i"+pai2])) {
+					continue;
+				}
+				if (targetDuiziPai1==1) {
+					var targetDuiziPai3 = 0;
+				} else {
+					var targetDuiziPai3 = targetDuiziPai1 - 2;
+				}
+				var pai3 = PokerUtils.getPoker54ByInfo({typ:hua1,value:targetDuiziPai3});
+
+				if (!F.isset(this.target_card["i"+pai3])) {
+					continue;
+				}
+				return [pai1,pai2,pai3];
+
+			};
+			//冲突太多,找不到
+			return this._openCardsByRealRandom();
+
+		} else if (typ=="baozi") {
+
+			//冲突太多,找不到
+			return this._openCardsByRealRandom();
+		}
+	},
+	_openCardsByRealRandom: function(){
+		logger.info("_openCardsByRealRandom");
+		var tempPai = [];
+		var counter = 0;
+		for (var k in this.target_card) {
+			if (this.target_card[k] == null){
+				continue;
+			}
+			counter++;
+			if (counter>3) {
+				break;
+			}
+			var p = k.substr(1);
+			tempPai.push(p);
+			this.target_card[k] = null;
+		}
+
+		return tempPai;
+	},
+	doOpenAwards : function(open){
+		//发奖
+
+	    //抽水比例
+	    var room_water_ratio = this.roomInfo.ratio;
+
+	    var user_get = {};
+	    var zhuang_get = 0;
+
+	    var user_result = {};
+
+	    var zhuang_result = [0,0,0,0];
+
+	    var user_exp = {};
+	    var zhuang_exp = 0;
+
+	    for (var uid in this.user_bet_info){
+	    	var bets = this.user_bet_info[uid];
+
+	        if (!F.isset(user_get[uid])){
+	            user_get[uid] = 0;
+	        }
+	        if (!F.isset(user_result[uid])){
+	            user_result[uid] = {'cc':[0,0,0,0],'r':0,'c':0};
+	        }
+	        for (var men in bets) {
+	        	var point = bets[men];
+
+	            var result = open.result[men-1];
+	            
+	            if (result==0){
+	                //庄家胜
+
+	                var ratio = config_zha_ratio[open['paixing'][0]];
+	                change_credits = Math.round(point*ratio);
+
+	                user_result[uid]['cc'][men-1] = 0- change_credits;
+	                user_get[uid] -= change_credits;
+
+	                zhuang_result[men-1] += change_credits;
+	                zhuang_get += change_credits;
+	            } else {
+	                //闲家胜
+	                ratio = config_zha_ratio[open['paixing'][men]];
+	                change_credits = round(point*ratio);
+	                //change_credits = round(point*ratio*(1-room_water_ratio));
+	                zhuang_get -= change_credits;
+	                zhuang_result[men-1] -= change_credits;
+
+	                user_result[uid]['cc'][men-1] = change_credits;
+	                user_get[uid] += change_credits;
+	            }
+	        }
+	    }
+	    player_win_credts = 0;
+	    for (var uid in user_get){
+	    	var credits = user_get[uid];
+			var this_user = user_get_user_base(uid);
+	        //is_robot = this_user['is_robot'];
+	        if (this_user['is_robot']!=1){
+	            player_win_credts += credits;
+	        }
+	        if (credits>0){
+	            real_credits = round(credits*(1-room_water_ratio));
+	            user_add_exp(uid,(credits - real_credits));			
+	            user_result[uid]['c'] = real_credits;
+	            user_result[uid]['r'] = change_credits(uid,10,101,real_credits,log_id);
+				this_user = user_get_user_base(uid);
+				user_result[uid]['exp'] = this_user['exp'];
+				user_result[uid]['level'] = this_user['level'];
+	        } else {
+	            user_result[uid]['c'] = credits;
+	            user_result[uid]['r'] = change_credits(uid,11,102,credits,log_id);
+				user_result[uid]['exp'] = this_user['exp'];
+				user_result[uid]['level'] = this_user['level'];
+	        }
+	    }
+	    
+	    //写入庄家TODOzhuang_info
+	    zhuang_uid = zhuang_info['uid'];
+		
+		if (zhuang_get>0){
+			zhuang_credits = round(zhuang_get*(1-room_water_ratio));
+			zhuang_exp = round(zhuang_get*room_water_ratio);
+
+	        user_result[-1]['c'] = zhuang_credits;
+			if(room_id==1){
+				user_result[-1]['r'] = 0;
+				user_result[-1]['exp'] = 0;
+				user_result[-1]['level'] = 0;
+			}else{
+				user_result[-1]['r'] = change_credits(zhuang_uid,10,101,zhuang_credits,log_id);
+				user_add_exp(zhuang_uid,zhuang_exp);
+				this_user = user_get_user_base(zhuang_uid);
+	            
+				user_result[-1]['exp'] = this_user['exp'];
+				user_result[-1]['level'] = this_user['level'];
+			}
+		} else {
+			zhuang_credits = zhuang_get;
+	        user_result[-1]['c'] = zhuang_credits;
+			if(room_id==1){
+				user_result[-1]['r'] = 0;
+				user_result[-1]['exp'] = 0;
+				user_result[-1]['level'] = 0;
+			}else{
+				user_result[-1]['r'] = change_credits(zhuang_uid,11,102,zhuang_credits,log_id);
+				this_user = user_get_user_base(zhuang_uid);
+				user_result[-1]['exp'] = this_user['exp'];
+				user_result[-1]['level'] = this_user['level'];
+			}
+			
+		}
+	    if(room_id!=1){
+	        this_user = user_get_user_base(zhuang_uid);
+	        if(this_user['is_robot']!=1){
+	            player_win_credts += zhuang_get;
+	        }
+	    }
+		user_result[-1]['cc'] = zhuang_result;
+	    if(player_win_credts<0){
+	        player_win_credts = 0 - player_win_credts;
+	        st_ser_change("sys_win",player_win_credts);
+	    }else{
+	        st_ser_change("sys_lost",player_win_credts);
+	    }
+		
 
 	},
 	onOpenFinish : function(){
 		//开
 
-		this.doBroadcast("table","AfterOpen",1,0,{cd:this.stateConfig[this.state].timer});
+		this.doBroadcast("table","AfterOpenNot",1,0,{cd:this.stateConfig[this.state].timer});
 	},
-	onBet : function(uid,men,point){
+	onBet : function(uid,men,point,packetSerId){
+		logger.info("onBet",uid,men,point);
 
+		if (this.thisRoundFull) {
+			userSession.sendErrPackFormat(packetSerId);
+			return;
+		}
 		var userSession = this.userList[uid];
+		logger.debug("userSession.credits",userSession.credits);
 		if (userSession.credits < point) {
-			//sssss
+			userSession.sendErrPackFormat(packetSerId);
 			return;
 		}
 
@@ -111,7 +523,8 @@ var Table = TablePublic.extend({
 				this.user_bet_info[uid][men] += point;
 			}
 		}
-		
+		//category,method,ret,packetId,data
+		userSession.send("table","betAck",1,packetSerId,{total_bet_info:this.bet_info,my_bet_info:userSession.bet_info});
 		// this.client.send({event:global.EVENT_CODE.ZHA_ADD_POINT,
 	 //                     ret:0,
 		// 					total_bet_info:this.client.logic_server.bet_info,

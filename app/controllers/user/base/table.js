@@ -3,7 +3,7 @@ var GameCtrller = BaseController.extend({
 	init : function (app){
 		this._super(app);
 	},
-	bet : function(userSession,ret,ts,data,packetSerId) {
+	betReq : function(userSession,ret,ts,data,packetSerId) {
 		//{"c":"user","m":"login","d":{"uid":1},"t":1404292893355,"s":0,"r":1}
 		if (!utils.checkParam(data,["men","point"])) {
 			userSession.sendErrPackFormat(packetSerId);
@@ -14,8 +14,7 @@ var GameCtrller = BaseController.extend({
 			userSession.sendErrPackFormat(packetSerId);
 			return;
 		}
-
-		if (!F.isset(userSession.uid)){
+		if (!F.isset(userSession.uid) || userSession.uid<=0){
 			userSession.sendErrPackFormat(packetSerId);
 			return;
 		}
@@ -25,7 +24,7 @@ var GameCtrller = BaseController.extend({
 			return;
 		}
 
-		userSession.table.onBet(userSession.uid,data.men,data.point);
+		userSession.table.onBet(userSession.uid,data.men,data.point,packetSerId);
 	}
 });
 

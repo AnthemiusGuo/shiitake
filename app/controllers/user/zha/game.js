@@ -3,7 +3,7 @@ var TheGameCtrller = GameCtrller.extend({
 	init : function (app){
 		this._super(app);
 	},
-	joinTable : function(userSession,ret,ts,data,packetSerId) {
+	joinTableReq : function(userSession,ret,ts,data,packetSerId) {
 		logger.debug("checking joinTable!");
 		//{"c":"user","m":"login","d":{"uid":1},"t":1404292893355,"s":0,"r":1}
 		if (!utils.checkParam(data,["prefer"])) {

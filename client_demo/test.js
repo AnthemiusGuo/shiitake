@@ -67,9 +67,9 @@ function sendGame(category,method,data) {
 var User = function(uid){
 	this.uid = uid;
 }
-User.prototype.onGameMsg_login = function(category,method,data,ts,packetId,ret) {
+User.prototype.onGameMsg_loginAck = function(category,method,data,ts,packetId,ret) {
 	consoleLog("game","logined!");
-	sendGame('game','joinTable',{prefer:0})
+	sendGame('game','joinTableReq',{prefer:0})
 }
 User.prototype.onGameMsg_unknown = function(category,method,data,ts,packetId,ret) {
 	recvLog("game","unkonwn package!!!");
@@ -78,23 +78,23 @@ User.prototype.onGameMsg_unknown = function(category,method,data,ts,packetId,ret
 var Table = function(tableId){
 	this.tableId = tableId;
 }
-Table.prototype.onGameMsg_Start = function(category,method,data,ts,packetId,ret) {
+Table.prototype.onGameMsg_StartNot = function(category,method,data,ts,packetId,ret) {
 	consoleLog("game","开始洗牌/摇骰子");
 	// sendGame('game','joinTable',{prefer:0})
 }
-Table.prototype.onGameMsg_join = function(category,method,data,ts,packetId,ret) {
+Table.prototype.onGameMsg_joinNot = function(category,method,data,ts,packetId,ret) {
 	consoleLog("game","广播:玩家"+data.uname+"加入游戏");
 	// sendGame('game','joinTable',{prefer:0})
 }
-Table.prototype.onGameMsg_WaitBet = function(category,method,data,ts,packetId,ret) {
+Table.prototype.onGameMsg_WaitBetNot = function(category,method,data,ts,packetId,ret) {
 	consoleLog("game","请下注");
 	// sendGame('game','joinTable',{prefer:0})
 }
-Table.prototype.onGameMsg_WaitOpen = function(category,method,data,ts,packetId,ret) {
+Table.prototype.onGameMsg_WaitOpenNot = function(category,method,data,ts,packetId,ret) {
 	consoleLog("game","等待开牌");
 	// sendGame('game','joinTable',{prefer:0})
 }
-Table.prototype.onGameMsg_AfterOpen = function(category,method,data,ts,packetId,ret) {
+Table.prototype.onGameMsg_AfterOpenNot = function(category,method,data,ts,packetId,ret) {
 	consoleLog("game","开牌展示!");
 	// sendGame('game','joinTable',{prefer:0})
 }
@@ -105,7 +105,7 @@ Table.prototype.onGameMsg_unknown = function(category,method,data,ts,packetId,re
 var Game = function(tableId){
 	this.tableId = tableId;
 }
-Game.prototype.onGameMsg_joinTable = function(category,method,data,ts,packetId,ret) {
+Game.prototype.onGameMsg_joinTableAck = function(category,method,data,ts,packetId,ret) {
 	consoleLog("game","加入牌局/牌桌 : "+data.tableId);
 }
 Game.prototype.onGameMsg_unknown = function(category,method,data,ts,packetId,ret) {
@@ -119,7 +119,7 @@ game = new Game(1);
 var lobbySocket = new WebSocket("ws://127.0.0.1:3000");
 lobbySocket.onopen = function() {
 	consoleLog("lobby","open");
-	sendLobby('user','login',{uid:user.uid})
+	sendLobby('user','loginReq',{uid:user.uid})
 };
 lobbySocket.onmessage = function(e) {
 // Receives a message.
@@ -132,7 +132,7 @@ lobbySocket.onclose = function() {
 var gameSocket = new WebSocket("ws://127.0.0.1:3010");
 gameSocket.onopen = function() {
 	consoleLog("game","open");
-	sendGame('user','login',{uid:user.uid})
+	sendGame('user','loginReq',{uid:user.uid})
 };
 gameSocket.onmessage = function(e) {
 	recvLog("game",e.data);
@@ -164,5 +164,5 @@ gameSocket.onclose = function() {
 };
 
 function send_bet(){
-	sendGame('table','bet',{men:1,point:1000})
+	sendGame('table','betReq',{men:1,point:1000})
 }
