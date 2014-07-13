@@ -12,8 +12,10 @@ ZhaPoker.prototype.reset = function(){
 ZhaPoker.prototype.setPokers = function(pokers){
 	this.pokers = pokers;
 	this.analysePokerTyp();
+	logger.info(this.poker_typ);
 }
 ZhaPoker.prototype.analysePokerTyp = function(){
+	logger.info("analysePokerTyp");
 	var huase = [];
 	var dianshu = [];
 	for (var k in this.pokers) {
@@ -58,6 +60,7 @@ ZhaPoker.prototype.analysePokerTyp = function(){
     if (dianshu[0]==dianshu[1] || dianshu[1]==dianshu[2]) {
         this.poker_typ = {typ:2,dianshu:dianshu};
         //#对子
+        return;
     }
     this.poker_typ = {typ:1,dianshu:dianshu};
     return;

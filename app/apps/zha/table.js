@@ -180,6 +180,11 @@ var Table = TablePublic.extend({
 			}
 			
 		}
+		tempPai[0] = F.shuffle(tempPai[0]);
+		tempPai[1] = F.shuffle(tempPai[1]);
+		tempPai[2] = F.shuffle(tempPai[2]);
+		tempPai[3] = F.shuffle(tempPai[3]);
+		tempPai[4] = F.shuffle(tempPai[4]);
 		//tempPai 五家牌已经有了
 		this.zhuang.setPokers(tempPai[0]);
 	    this.xian1.setPokers(tempPai[1]);
@@ -192,7 +197,7 @@ var Table = TablePublic.extend({
 	    this.xian3.result = this._get_win_loose(this.zhuang,this.xian3);
 	    this.xian4.result = this._get_win_loose(this.zhuang,this.xian4);
 		
-		
+
 	},
 	_openCardsByOpenBig : function(typ) {
 		if (typ=="sanpai"){
