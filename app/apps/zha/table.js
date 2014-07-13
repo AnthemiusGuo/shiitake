@@ -48,11 +48,11 @@ var Table = TablePublic.extend({
 	    this.his_3 =  [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1];
 	    this.his_4 =  [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1];
 
-	    this.zhuang = new ZhaPoker();
-	    this.xian1 = new ZhaPoker();
-	    this.xian2 = new ZhaPoker();
-	    this.xian3 = new ZhaPoker();
-	    this.xian4 = new ZhaPoker();
+	    this.zhuang = new ZhaPoker(0);
+	    this.xian1 = new ZhaPoker(1);
+	    this.xian2 = new ZhaPoker(2);
+	    this.xian3 = new ZhaPoker(3);
+	    this.xian4 = new ZhaPoker(4);
 
 	    this.zhuang_name = '未设置';
 	    this.innings = 0;
@@ -123,13 +123,30 @@ var Table = TablePublic.extend({
 		seed = F.rand(0,10000);
 		var bingo = "";
 		for (var typ in openBig2) {
-			var opportunity = openBig[typ];
+			var opportunity = openBig2[typ];
 			if (seed<=opportunity) {
 				bingo = typ;
 				break;
 			}
 		}
 		return bingo;
+	},
+	//ret 1 前者负，0 前者胜
+	_get_win_loose : function(a,b){
+		if (a.poker_typ.typ>b.poker_typ.typ){
+			return 0;
+		}
+		if (a.poker_typ.typ<b.poker_typ.typ){
+			return 1;
+		}
+		for (var i = 2; i >= 0; i--) {
+			if (a.poker_typ.dianshu[i]>b.poker_typ.dianshu[i]) {
+				return 0;
+			} else if (a.poker_typ.dianshu[i]<b.poker_typ.dianshu[i]) {
+				return 1;
+			}
+		};
+		return 0;
 	},
 	doOpen : function(){
 		//开
@@ -161,27 +178,21 @@ var Table = TablePublic.extend({
 			} else {
 				tempPai[i] = this._openCardsByRealRandom();
 			}
-			logger.info("isOpenBig",isOpenBig,"tempPai",tempPai[i]);
-			for (var k in tempPai[i]) {
-				logger.info(PokerUtils.getPokerInfoBy54(tempPai[i][k]));
-			}
+			
 		}
-		
-		// zhuang_pai = zha_analyse_typ(zhuang);
-		// xian1_pai = zha_analyse_typ(xian1);
-		// xian2_pai = zha_analyse_typ(xian2);
-		// xian3_pai = zha_analyse_typ(xian3);
-		// xian4_pai = zha_analyse_typ(xian4);
+		//tempPai 五家牌已经有了
+		this.zhuang.setPokers(tempPai[0]);
+	    this.xian1.setPokers(tempPai[1]);
+	    this.xian2.setPokers(tempPai[2]);
+	    this.xian3.setPokers(tempPai[3]);
+	    this.xian4.setPokers(tempPai[4]);
 
-		// result1 = get_win_loose(zhuang_pai,xian1_pai);
-		// result2 = get_win_loose(zhuang_pai,xian2_pai);
-		// result3 = get_win_loose(zhuang_pai,xian3_pai);
-		// result4 = get_win_loose(zhuang_pai,xian4_pai);
-		    
-		// json_rst['data']= array('pai'=>array(zhuang,xian1,xian2,xian3,xian4),
-		//                         'paixing'=>array(zhuang_pai[0],xian1_pai[0],xian2_pai[0],xian3_pai[0],xian4_pai[0]),
-		//                         'result'=>array(result1,result2,result3,result4)
-		//                         );
+	    this.xian1.result = this._get_win_loose(this.zhuang,this.xian1);
+	    this.xian2.result = this._get_win_loose(this.zhuang,this.xian2);
+	    this.xian3.result = this._get_win_loose(this.zhuang,this.xian3);
+	    this.xian4.result = this._get_win_loose(this.zhuang,this.xian4);
+		
+		
 	},
 	_openCardsByOpenBig : function(typ) {
 		if (typ=="sanpai"){
@@ -205,29 +216,20 @@ var Table = TablePublic.extend({
 						hua2=0;
 					}
 				}
-				var pai2 = PokerUtils.getPoker54ByInfo({typ:hua1,value:targetDuiziPai});
+				var pai2 = PokerUtils.getPoker54ByInfo({typ:hua2,value:targetDuiziPai});
 
 				if (!F.isset(this.target_card["i"+pai2])) {
 					continue;
 				}
 				var counter = 0;
-				var pai3 = -1;
-				for (var k in this.target_card) {
-					if (this.target_card[k] == null){
-						continue;
-					}
-					counter++;
-					if (counter>3) {
-						break;
-					}
-					if (k!=pai1 && k!=pai2) {
-						pai3 = k.substr(1);
-						break;
-					}
-				}
-				if (pai3==-1) {
+				var pai3 = F.rand(0,52);
+				if (!F.isset(this.target_card["i"+pai3])) {
 					continue;
 				}
+				this.target_card["i"+pai1] = null;
+				this.target_card["i"+pai2] = null;
+				this.target_card["i"+pai3] = null;
+
 				return [pai1,pai2,pai3];
 
 			};
@@ -274,13 +276,40 @@ var Table = TablePublic.extend({
 				if (!F.isset(this.target_card["i"+pai3])) {
 					continue;
 				}
+				this.target_card["i"+pai1] = null;
+				this.target_card["i"+pai2] = null;
+				this.target_card["i"+pai3] = null;
 				return [pai1,pai2,pai3];
 
 			};
 			//冲突太多,找不到
 			return this._openCardsByRealRandom();
 		} else if (typ=="jinhua") {
+			var limit = 5;
+			for (var i = 0; i < limit; i++) {
+				var hua = F.rand(0,3);
 
+				var targetDuiziPai1 = F.rand(0,12);
+				var pai1 = PokerUtils.getPoker54ByInfo({typ:hua,value:targetDuiziPai1});
+				if (!F.isset(this.target_card["i"+pai1])) {
+					continue;
+				}
+				var targetDuiziPai2 = F.rand(0,12);
+				var pai2 = PokerUtils.getPoker54ByInfo({typ:hua,value:targetDuiziPai2});
+				if (!F.isset(this.target_card["i"+pai2])) {
+					continue;
+				}
+
+				var targetDuiziPai3 = F.rand(0,12);
+				var pai3 = PokerUtils.getPoker54ByInfo({typ:hua,value:targetDuiziPai3});
+				if (!F.isset(this.target_card["i"+pai3])) {
+					continue;
+				}
+				this.target_card["i"+pai1] = null;
+				this.target_card["i"+pai2] = null;
+				this.target_card["i"+pai3] = null;
+				return [pai1,pai2,pai3];
+			}
 			//冲突太多,找不到
 			return this._openCardsByRealRandom();
 
@@ -315,6 +344,9 @@ var Table = TablePublic.extend({
 				if (!F.isset(this.target_card["i"+pai3])) {
 					continue;
 				}
+				this.target_card["i"+pai1] = null;
+				this.target_card["i"+pai2] = null;
+				this.target_card["i"+pai3] = null;
 				return [pai1,pai2,pai3];
 
 			};
@@ -322,7 +354,35 @@ var Table = TablePublic.extend({
 			return this._openCardsByRealRandom();
 
 		} else if (typ=="baozi") {
+			var limit = 5;
+			for (var i = 0; i < limit; i++) {
+				//
+				var targetDuiziPai1 = F.rand(1,12);
+				var huaNo = F.rand(0,3);
+				var allHua = [0,1,2,3];
+				allHua.splice(huaNo,1);
 
+				var pai1 = PokerUtils.getPoker54ByInfo({typ:allHua[0],value:targetDuiziPai1});
+
+				if (!F.isset(this.target_card["i"+pai1])) {
+					continue;
+				}
+				var pai2 = PokerUtils.getPoker54ByInfo({typ:allHua[1],value:targetDuiziPai1});
+
+				if (!F.isset(this.target_card["i"+pai2])) {
+					continue;
+				}
+				var pai3 = PokerUtils.getPoker54ByInfo({typ:allHua[2],value:targetDuiziPai1});
+
+				if (!F.isset(this.target_card["i"+pai3])) {
+					continue;
+				}
+				this.target_card["i"+pai1] = null;
+				this.target_card["i"+pai2] = null;
+				this.target_card["i"+pai3] = null;
+				return [pai1,pai2,pai3];
+
+			};
 			//冲突太多,找不到
 			return this._openCardsByRealRandom();
 		}

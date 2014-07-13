@@ -2,6 +2,7 @@ var GameServer = require('app/base/game');
 var ZhaServer = GameServer.extend({
 	init : function(typ,id,info) {
 		this._super(typ,id,info);
+		
 		this.roomId = info.indexParam.roomId;
 		this.tables = {};
 		this.onlineUsers = {};
