@@ -142,6 +142,7 @@ logicApp.run();
 
 var serversInfo = config.servers[appTyp].serverList[appId];
 
+//先放在这里,将来移到run函数
 if (serversInfo.frontend) {
     //支持对用户接入,监听用户端口
     global.frontServer = new WebSocketServer({port: serversInfo.clientPort});

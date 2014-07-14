@@ -92,6 +92,11 @@ var Table = TablePublic.extend({
 		//没啥要做，给用户广播下
 		this.canBet = true;
 		this.doBroadcast("table","WaitBetNot",1,0,{cd:this.stateConfig[this.state].timer});
+		this.betTick = setInterval(this.onTickWaitBet.bind(this),1000);
+	},
+	onTickWaitBet : function() {
+		this.doBroadcast("table","InBetNot",1,0,{cd:this.stateConfig[this.state].timer});
+		userSession.send("table","betAck",1,packetSerId,{total_bet_info:this.bet_info,my_bet_info:userSession.bet_info});
 	},
 	doWaitOpen : function(){
 		//没啥要做，给用户广播下
@@ -197,6 +202,25 @@ var Table = TablePublic.extend({
 	    this.xian3.result = this._get_win_loose(this.zhuang,this.xian3);
 	    this.xian4.result = this._get_win_loose(this.zhuang,this.xian4);
 		
+		logger.debug(this.zhuang);
+	    logger.debug(this.xian1);
+	    logger.debug(this.xian2);
+	    logger.debug(this.xian3);
+	    logger.debug(this.xian4);
+
+	    this.his_1.shift();
+	    this.his_2.shift();
+	    this.his_3.shift();
+	    this.his_4.shift();
+
+	    this.his_1.push(this.xian1.result);
+	    this.his_2.push(this.xian2.result);
+	    this.his_3.push(this.xian3.result);
+	    this.his_4.push(this.xian4.result);
+
+	    //算钱
+
+	    this.doOpenAwards();
 
 	},
 	_openCardsByOpenBig : function(typ) {
@@ -411,22 +435,29 @@ var Table = TablePublic.extend({
 
 		return tempPai;
 	},
-	doOpenAwards : function(open){
+	doOpenAwards : function(){
 		//发奖
-
+		var openResult = {};
+		openResult[0] = this.zhuang.getPokers();
+	    openResult[1] = this.xian1.getPokers();
+	    openResult[2] = this.xian2.getPokers();
+	    openResult[3] = this.xian3.getPokers();
+	    openResult[4] = this.xian4.getPokers();
 	    //抽水比例
-	    var room_water_ratio = this.roomInfo.ratio;
+	    var room_water_ratio = this.roomConfig.ratio;
 
 	    var user_get = {};
 	    var zhuang_get = 0;
 
-	    var user_result = {};
+	    var user_result = {"-1":{}};
 
 	    var zhuang_result = [0,0,0,0];
 
 	    var user_exp = {};
 	    var zhuang_exp = 0;
+	    logger.debug("this.user_bet_info:",this.user_bet_info);
 
+	    //不管用户在线不,先计算输赢
 	    for (var uid in this.user_bet_info){
 	    	var bets = this.user_bet_info[uid];
 
@@ -439,12 +470,12 @@ var Table = TablePublic.extend({
 	        for (var men in bets) {
 	        	var point = bets[men];
 
-	            var result = open.result[men-1];
+	            var result = this['xian'+men].result;
 	            
 	            if (result==0){
 	                //庄家胜
 
-	                var ratio = config_zha_ratio[open['paixing'][0]];
+	                var ratio = config_zha_ratio[this.zhuang.poker_typ.typ];
 	                change_credits = Math.round(point*ratio);
 
 	                user_result[uid]['cc'][men-1] = 0- change_credits;
@@ -454,8 +485,8 @@ var Table = TablePublic.extend({
 	                zhuang_get += change_credits;
 	            } else {
 	                //闲家胜
-	                ratio = config_zha_ratio[open['paixing'][men]];
-	                change_credits = round(point*ratio);
+	                ratio = config_zha_ratio[this['xian'+men].poker_typ.typ];
+	                change_credits = Math.round(point*ratio);
 	                //change_credits = round(point*ratio*(1-room_water_ratio));
 	                zhuang_get -= change_credits;
 	                zhuang_result[men-1] -= change_credits;
@@ -465,80 +496,136 @@ var Table = TablePublic.extend({
 	            }
 	        }
 	    }
+
+	    //用户总收益, 用于统计分析
 	    player_win_credts = 0;
+	    
+	    logger.debug(zhuang_get,user_get);
+	    
+	    //先处理庄,因为每个用户都要顺便把庄的信息广播掉
+
+	    var zhuang_credits = zhuang_get;
+	    var zhuang_exp = 0;
+
+		if (zhuang_get>0) {
+			zhuang_credits = Math.round(zhuang_get*(1-room_water_ratio));
+
+			//系统坐庄不计经验
+			if (this.zhuang_uid!=0) {
+				zhuang_exp = Math.round(zhuang_get*room_water_ratio);
+			}
+		} 
+
+		var zhuang_result_send = {};
+		zhuang_result_send['c'] = zhuang_credits;
+		zhuang_result_send['get_exp'] = zhuang_exp;
+		zhuang_result_send['cc'] = zhuang_result;
+
+		if (this.zhuang_uid!=0){
+			//不是系统坐庄,写回数据
+			if (F.isset(this.userList[this.zhuang_uid].userInfo)  && this.userList[this.zhuang_uid].isConnect) {
+				this_user = this.userList[this.zhuang_uid];
+	    		//已经有用户信息
+	    		if (this_user.is_robot!=1) {
+		            player_win_credts += credits;
+		        }
+
+	            this_user.userInfo['exp'] += zhuang_exp;
+	            this_user.userInfo['credits'] += zhuang_credits;
+	            this_user.userInfo['total_credits'] += zhuang_credits;
+	            zhuang_result_send['r'] = this_user.userInfo['credits'];
+				//通知用户				
+				this.userList[this.zhuang_uid].send("table","OpenNot",1,0,{zhuang_me:zhuang_result_send,r:openResult});
+	    	}
+	    	//用户加经验,钱
+    		//写回用户信息
+			dmManager.setDataChange("user","BaseInfo",{uid:this.zhuang_uid},{'credits':zhuang_credits,'exp':zhuang_exp,total_credits:zhuang_credits},function(ret,data){
+				if (ret>0) {
+					
+				} else {
+				}
+			});
+		}
+
+	    //根据输赢,再去发数据
 	    for (var uid in user_get){
 	    	var credits = user_get[uid];
-			var this_user = user_get_user_base(uid);
-	        //is_robot = this_user['is_robot'];
-	        if (this_user['is_robot']!=1){
-	            player_win_credts += credits;
-	        }
-	        if (credits>0){
-	            real_credits = round(credits*(1-room_water_ratio));
-	            user_add_exp(uid,(credits - real_credits));			
-	            user_result[uid]['c'] = real_credits;
-	            user_result[uid]['r'] = change_credits(uid,10,101,real_credits,log_id);
-				this_user = user_get_user_base(uid);
-				user_result[uid]['exp'] = this_user['exp'];
-				user_result[uid]['level'] = this_user['level'];
+	    	if (!F.isset(this.userList[uid])) {
+	    		//用户未登录,这个应该是错误的状态,不应该出现
+	    		//防止出错,直接发数据库请求
+	    		var ClientUser = require('app/apps/'+appTyp+'/client');
+	    		var this_user = new ClientUser(null);
+	    		this_user.isConnect = false;
+				this_user.isLogined = false;
+				this_user.uid = uid;
+				this.userList[uid] = this_user;
+	    	} else {
+	    		var this_user = this.userList[uid];
+	    	}
+	    	if (credits>0){
+	            var real_credits = Math.round(credits*(1-room_water_ratio));
+	            var exp = (credits - real_credits);
+	            
 	        } else {
-	            user_result[uid]['c'] = credits;
-	            user_result[uid]['r'] = change_credits(uid,11,102,credits,log_id);
-				user_result[uid]['exp'] = this_user['exp'];
-				user_result[uid]['level'] = this_user['level'];
+	        	var real_credits = credits;
+	        	var exp = 0;
 	        }
+
+	    	if (F.isset(this.userList[uid].userInfo) && this.userList[uid].isConnect) {
+	    		//已经有用户信息
+	    		if (this_user.is_robot!=1) {
+		            player_win_credts += credits;
+		        }
+
+	            this_user.userInfo['exp'] += exp;
+	            this_user.userInfo['credits'] += real_credits;
+	            this_user.userInfo['total_credits'] += real_credits;
+	            
+				//用户升级改为异步通知,不再在这里通知
+				//user_result[uid]['level'] = this_user.userInfo['level'];
+				
+				//通知用户				
+				var me_result_send = {};
+				me_result_send['c'] = real_credits;
+				me_result_send['get_exp'] = exp;
+				me_result_send['cc'] = user_result[uid]['cc'];
+				me_result_send['r'] = this_user.userInfo['credits'];
+				this.userList[uid].send("table","OpenNot",1,0,{zhuang:zhuang_result_send,me:me_result_send,r:openResult});
+	    	}
+	    	//用户加经验,钱
+    		//写回用户信息
+			dmManager.setDataChange("user","BaseInfo",{uid:uid},{'credits':real_credits,'exp':exp,total_credits:real_credits},function(ret,data){
+				if (ret>0) {
+					
+				} else {
+				}
+			});
+	    }
+	    //未下注的人的广播
+	    for (var uid in this.userList){
+	    	if (F.isset(user_get[uid])) {
+	    		continue;
+	    	}
+	    	this.userList[uid].send("table","OpenNot",1,0,{zhuang:zhuang_result_send,r:openResult});
 	    }
 	    
-	    //写入庄家TODOzhuang_info
-	    zhuang_uid = zhuang_info['uid'];
-		
-		if (zhuang_get>0){
-			zhuang_credits = round(zhuang_get*(1-room_water_ratio));
-			zhuang_exp = round(zhuang_get*room_water_ratio);
-
-	        user_result[-1]['c'] = zhuang_credits;
-			if(room_id==1){
-				user_result[-1]['r'] = 0;
-				user_result[-1]['exp'] = 0;
-				user_result[-1]['level'] = 0;
-			}else{
-				user_result[-1]['r'] = change_credits(zhuang_uid,10,101,zhuang_credits,log_id);
-				user_add_exp(zhuang_uid,zhuang_exp);
-				this_user = user_get_user_base(zhuang_uid);
-	            
-				user_result[-1]['exp'] = this_user['exp'];
-				user_result[-1]['level'] = this_user['level'];
-			}
-		} else {
-			zhuang_credits = zhuang_get;
-	        user_result[-1]['c'] = zhuang_credits;
-			if(room_id==1){
-				user_result[-1]['r'] = 0;
-				user_result[-1]['exp'] = 0;
-				user_result[-1]['level'] = 0;
-			}else{
-				user_result[-1]['r'] = change_credits(zhuang_uid,11,102,zhuang_credits,log_id);
-				this_user = user_get_user_base(zhuang_uid);
-				user_result[-1]['exp'] = this_user['exp'];
-				user_result[-1]['level'] = this_user['level'];
-			}
-			
-		}
-	    if(room_id!=1){
-	        this_user = user_get_user_base(zhuang_uid);
+	    if(this.zhuang_uid!=0){
+	        this_user = user_get_user_base(this.zhuang_uid);
 	        if(this_user['is_robot']!=1){
 	            player_win_credts += zhuang_get;
 	        }
 	    }
-		user_result[-1]['cc'] = zhuang_result;
+		
 	    if(player_win_credts<0){
 	        player_win_credts = 0 - player_win_credts;
-	        st_ser_change("sys_win",player_win_credts);
+	        logicApp.st_ser_change("sys_win",player_win_credts);
 	    }else{
-	        st_ser_change("sys_lost",player_win_credts);
+	        logicApp.st_ser_change("sys_lost",player_win_credts);
 	    }
 		
-
+	    logger.debug(user_result);
+	    //rpc 通知Lobby以下用户发生数据变化, 为了节约信令, 采用batch通知
+	    //upsteam无需通知,只要改变缓存内的值,直接可以生效
 	},
 	onOpenFinish : function(){
 		//开
@@ -548,13 +635,27 @@ var Table = TablePublic.extend({
 	onBet : function(uid,men,point,packetSerId){
 		logger.info("onBet",uid,men,point);
 
-		if (this.thisRoundFull) {
-			userSession.sendErrPackFormat(packetSerId);
+		if (!F.isset(this.userList[uid])){
+			//no this user
+			logger.error("no user for this uid:"+uid);
 			return;
 		}
 		var userSession = this.userList[uid];
+		if (this.canBet==false) {
+			logger.error("this.canBet");
+			userSession.sendErrPackFormat(packetSerId);
+			return;
+		}
+
+		if (this.thisRoundFull) {
+			logger.error("this.thisRoundFull");
+			userSession.sendErrPackFormat(packetSerId);
+			return;
+		}
+
 		logger.debug("userSession.credits",userSession.credits);
 		if (userSession.credits < point) {
+			logger.error("userSession.credits < point",userSession.credits);
 			userSession.sendErrPackFormat(packetSerId);
 			return;
 		}
@@ -590,11 +691,6 @@ var Table = TablePublic.extend({
 		}
 		//category,method,ret,packetId,data
 		userSession.send("table","betAck",1,packetSerId,{total_bet_info:this.bet_info,my_bet_info:userSession.bet_info});
-		// this.client.send({event:global.EVENT_CODE.ZHA_ADD_POINT,
-	 //                     ret:0,
-		// 					total_bet_info:this.client.logic_server.bet_info,
-		// 					my_bet_info:this.bet_info});
-
 	}
 
 });

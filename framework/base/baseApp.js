@@ -10,7 +10,7 @@ var BaseApp = Class.extend({
 		this.rpcSocketManager = new BaseSocketManager(this,"rpc",this.typ);
 		this.allReady = false;
 		this.firstAllReady = false;
-		this.checkReadyTick = setInterval(this.checkStatus.bind(this),3000);
+		
 
 		this.startTS = new Date().getTime();
 		this.readyTS = 0;
@@ -24,7 +24,7 @@ var BaseApp = Class.extend({
 		logger.warn(this.id+"@"+this.typ+" : "+msg);
 	},
 	run : function() {
-		
+		this.checkReadyTick = setInterval(this.checkStatus.bind(this),3000);
 	},
 	checkStatus : function() {
 		if (rpc.allReady===false) {

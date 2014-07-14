@@ -5,12 +5,16 @@ var BaseClient = Class.extend({
 		this.isLogined = false;
 		this.uid = 0;
 		this.supportZipSignal = false;
-		// this.userInfo = null;
+		this.userInfo = null;
 	},
 	onCloseSocket: function() {
-
+		this.isConnect = false;
 	},
 	send : function(category,method,ret,packetId,data) {
+		if (this.isConnect==false || !F.isset(this.socket)){
+			logger.error("not connect!!");
+			return;
+		}
 		var ts =  new Date().getTime();
 		var packet = {'c':category,'m':method,'d':data,'t':ts,'s':packetId,'r':ret};
 		this.socket.send(JSON.stringify(packet));
@@ -62,6 +66,7 @@ var BaseClient = Class.extend({
 	},
 	onGetUserInfo: function(){
 		//防出错
+		logger.error("PLEASE OVERWRITE ME!!!");
 	}
 });
 

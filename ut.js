@@ -13,8 +13,8 @@ var config = require('app/config/config')
 
 //nohup node app.js --typ=lobby --id=lobby-server-1 & >room_1.out
 
-var init_param = {typ:"lobby",id:"lobby-server-1"};
-// var init_param = {typ:"zha",id:"zha-server-1"};
+//var init_param = {typ:"lobby",id:"lobby-server-1"};
+var init_param = {typ:"zha",id:"zha-srv-1-1"};
 
 process.argv.forEach(function (val, index, array) {
     if (index<2){
@@ -100,9 +100,17 @@ if (config.redis!=undefined) {
 DmManager = require('framework/base/dataModelManager');
 global.dmManager = new DmManager();
 
+var LogicApp = require('app/apps/'+appTyp+'/'+appTyp);
+global.logicApp = new LogicApp(appTyp,appId,config.servers[appTyp].serverList[appId]); 
+
+
 var roomConfigs = require('app/config/zha');
 var roomConfig = roomConfigs.servers["zha-srv-1-1"];
 
 var Table =  require('app/apps/zha/table');
 var table = new Table(1,roomConfig);
+table.user_bet_info = {};
+table.user_bet_info['21']  = { '1': 1000 ,'2':1000,'3':1200,'4':10000} ;
+table.user_bet_info['22']  = { '1': 0 ,'2':0,'3':12000,'4':100} ;
+table.user_bet_info['23']  = { '1': 100 ,'2':20000,'3':0,'4':0} ;
 table.doOpen();

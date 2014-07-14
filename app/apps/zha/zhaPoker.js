@@ -12,15 +12,15 @@ ZhaPoker.prototype.reset = function(){
 ZhaPoker.prototype.setPokers = function(pokers){
 	this.pokers = pokers;
 	this.analysePokerTyp();
-	logger.info(this.poker_typ);
+}
+ZhaPoker.prototype.getPokers = function(){
+	return {p:this.pokers,r:this.result,t:this.poker_typ.typ};
 }
 ZhaPoker.prototype.analysePokerTyp = function(){
-	logger.info("analysePokerTyp");
 	var huase = [];
 	var dianshu = [];
 	for (var k in this.pokers) {
 		var tempInfo = 	PokerUtils.getPokerInfoBy54(this.pokers[k]);
-		logger.debug(tempInfo);
 		huase.push(tempInfo.typ);
 		dianshu.push(tempInfo.dianshu);
 	}
