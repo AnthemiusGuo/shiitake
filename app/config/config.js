@@ -39,6 +39,7 @@ if (PRODUCTION==="production") {
 	};  
 } else {
 	config.servers = {
+		//大厅
 	    "lobby":{
 	    	"runTyp":"nodejs",//nodejs 在本机启动,用于runner脚本
 	    	"rpcMode":"lobby",
@@ -48,6 +49,16 @@ if (PRODUCTION==="production") {
 	    		"lobby-server-1":{"id":"lobby-server-1","host":"127.0.0.1","port":3001,"clientPort":3000,"frontend":true}
 	    	}
 	    },
+	    //事件驱动引擎
+	    // "eDriver":{
+	    // 	"runTyp":"nodejs",//nodejs 在本机启动,用于runner脚本
+	    // 	"rpcMode":"eDriver",
+	    // 	"rpcProtocol":"websocket",
+	    // 	"rpcMustConnect" : true,
+	    // 	"serverList" : {
+	    // 		"eDriver-main":{"id":"eDriver-main","host":"127.0.0.1","port":3901,"frontend":false}
+	    // 	}
+	    // },
 	    "upstream":{
 	    	"runTyp":"web",//web 不再runner管理
 	    	"rpcMode":"upstream",

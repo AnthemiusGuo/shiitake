@@ -72,6 +72,8 @@ var Table = TablePublic.extend({
 	    this.canBet = false;
 	    this.thisRoundFull = false;
 	    this.thisRoundLimit = 0;
+
+	    this.bet_info_change = false;
 	},
 	doStart : function(){
 		this.canBet = false;
@@ -95,8 +97,10 @@ var Table = TablePublic.extend({
 		this.betTick = setInterval(this.onTickWaitBet.bind(this),1000);
 	},
 	onTickWaitBet : function() {
-		this.doBroadcast("table","InBetNot",1,0,{cd:this.stateConfig[this.state].timer});
-		userSession.send("table","betAck",1,packetSerId,{total_bet_info:this.bet_info,my_bet_info:userSession.bet_info});
+		if (this.bet_info_change) {
+			this.doBroadcast("table","InBetNot",1,0,{total_bet_info:this.bet_info});
+			this.bet_info_change = false;
+		}
 	},
 	doWaitOpen : function(){
 		//没啥要做，给用户广播下
@@ -535,7 +539,7 @@ var Table = TablePublic.extend({
 	            this_user.userInfo['total_credits'] += zhuang_credits;
 	            zhuang_result_send['r'] = this_user.userInfo['credits'];
 				//通知用户				
-				this.userList[this.zhuang_uid].send("table","OpenNot",1,0,{zhuang_me:zhuang_result_send,r:openResult});
+				this.userList[this.zhuang_uid].send("table","OpenNot",1,0,{zhuang_me:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
 	    	}
 	    	//用户加经验,钱
     		//写回用户信息
@@ -590,7 +594,7 @@ var Table = TablePublic.extend({
 				me_result_send['get_exp'] = exp;
 				me_result_send['cc'] = user_result[uid]['cc'];
 				me_result_send['r'] = this_user.userInfo['credits'];
-				this.userList[uid].send("table","OpenNot",1,0,{zhuang:zhuang_result_send,me:me_result_send,r:openResult});
+				this.userList[uid].send("table","OpenNot",1,0,{zhuang:zhuang_result_send,me:me_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
 	    	}
 	    	//用户加经验,钱
     		//写回用户信息
@@ -606,9 +610,11 @@ var Table = TablePublic.extend({
 	    	if (F.isset(user_get[uid])) {
 	    		continue;
 	    	}
-	    	this.userList[uid].send("table","OpenNot",1,0,{zhuang:zhuang_result_send,r:openResult});
+	    	this.userList[uid].send("table","OpenNot",1,0,{zhuang:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
 	    }
 	    
+	    this.zhuang_result_send = zhuang_result_send;
+	    this.openResult = openResult;
 	    if(this.zhuang_uid!=0){
 	        this_user = user_get_user_base(this.zhuang_uid);
 	        if(this_user['is_robot']!=1){
@@ -626,11 +632,6 @@ var Table = TablePublic.extend({
 	    logger.debug(user_result);
 	    //rpc 通知Lobby以下用户发生数据变化, 为了节约信令, 采用batch通知
 	    //upsteam无需通知,只要改变缓存内的值,直接可以生效
-	},
-	onOpenFinish : function(){
-		//开
-
-		this.doBroadcast("table","AfterOpenNot",1,0,{cd:this.stateConfig[this.state].timer});
 	},
 	onBet : function(uid,men,point,packetSerId){
 		logger.info("onBet",uid,men,point);
@@ -665,6 +666,8 @@ var Table = TablePublic.extend({
 	        userSession.matchId_has_bet = this.matchId;
 	    }
 
+	    this.bet_info_change = true;
+
 		userSession.credits -= point;
 
 		//men 参数是1，2，3，4
@@ -691,8 +694,32 @@ var Table = TablePublic.extend({
 		}
 		//category,method,ret,packetId,data
 		userSession.send("table","betAck",1,packetSerId,{total_bet_info:this.bet_info,my_bet_info:userSession.bet_info});
-	}
+	},
+	onJoinTable : function(userSession) {
+		logger.debug("user "+userSession.uid+" join the table");
+		this.userList[userSession.uid] = userSession;
+		this.userCounter = Object.keys(this.userList).length;
 
+		if (this.state=="init") {
+			//第一个进桌的驱动这个桌子开始跑循环
+			this.begin();
+		}
+		//game","m":"joinTable","d":{"prefer":0},"t":1404574299209,"s":1,"r":1}
+		var allUsersInfo = {};
+		for (var k in this.userList) {
+			allUsersInfo[this.userList[k].uid] = this.userList[k].getUserShowInfo();
+		}
+		userSession.send("game","joinTableAck",1,0,{tableId:this.tableId,usersIn:allUsersInfo});
+		this.doOptBroadcast("table","joinNot",1,0,userSession.getUserShowInfo());
+		var now = new Date().getTime();
+		if (this.state !="AfterOpen") {
+			var cd = Math.ceil((now -  this.stateTime)/1000);
+			userSession.send("table",this.state+"Not",1,0,{cd:this.stateConfig[this.state].timer-cd});
+		} else {
+			var cd = Math.ceil((now -  this.stateTime)/1000);
+			userSession.send("table","OpenNot",1,0,{zhuang:this.zhuang_result_send,r:this.openResult,cd:this.stateConfig[this.state].timer-cd});
+		}
+	},
 });
 
 module.exports = Table;

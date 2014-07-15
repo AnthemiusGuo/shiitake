@@ -53,10 +53,6 @@ logger.setLevel('INFO');
 // logger.error('Cheese is too ripe!');
 // logger.fatal('Cheese was breeding ground for listeria.');
 /*prepare*/
-var WebSocketServer = require('ws').Server;
-
-var ClientUser = require('app/apps/'+appTyp+'/client');
-var ClientRPC = require('framework/base/rpcClient');
 
 
 /*prepare mysql*/
@@ -125,6 +121,15 @@ if (config.redis!=undefined) {
     // });
 }
 
+var serversInfo = config.servers[appTyp].serverList[appId];
+
+var WebSocketServer = require('ws').Server;
+if (serversInfo.frontend) {
+    var ClientUser = require('app/apps/'+appTyp+'/client');
+}
+
+var ClientRPC = require('framework/base/rpcClient');
+
 DmManager = require('framework/base/dataModelManager');
 global.dmManager = new DmManager();
 
@@ -140,7 +145,7 @@ logicApp.run();
 //e.g.
 //rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});
 
-var serversInfo = config.servers[appTyp].serverList[appId];
+
 
 //先放在这里,将来移到run函数
 if (serversInfo.frontend) {

@@ -101,21 +101,7 @@ var TablePublic = Table.extend({
 	},
 
 	onJoinTable : function(userSession) {
-		logger.debug("user "+userSession.uid+" join the table");
-		this.userList[userSession.uid] = userSession;
-		this.userCounter = Object.keys(this.userList).length;
-
-		if (this.state=="init") {
-			//第一个进桌的驱动这个桌子开始跑循环
-			this.begin();
-		}
-		//game","m":"joinTable","d":{"prefer":0},"t":1404574299209,"s":1,"r":1}
-		var allUsersInfo = {};
-		for (var k in this.userList) {
-			allUsersInfo[this.userList[k].uid] = this.userList[k].getUserShowInfo();
-		}
-		userSession.send("game","joinTableAck",1,0,{tableId:this.tableId,usersIn:allUsersInfo});
-		this.doOptBroadcast("table","joinNot",1,0,userSession.getUserShowInfo());
+		logger.error("PLEASE OVERWRITE ME!!!");		
 	},
 	
 });
