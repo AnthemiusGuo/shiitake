@@ -6,6 +6,9 @@ var LobbyClient = BaseClient.extend({
 	login : function(uid) {
 		this.isLogined = true;
 		this.uid = uid;
+	},
+	onGetUserInfo : function(){
+		
 	}
 });
 module.exports = LobbyClient;

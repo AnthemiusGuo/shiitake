@@ -1,12 +1,12 @@
 var Table = Class.extend({
 	init : function(tableId,roomConfig) {
-		logger.error("PLEASE OVERWRITE ME!!!");
+		utils.PLEASE_OVERWRITE_ME();
 	},
 	run : function() {
 		
 	},
 	onJoinTable : function(userSession) {
-		logger.error("PLEASE OVERWRITE ME!!!");
+		utils.PLEASE_OVERWRITE_ME();
 	},
 	//主动离桌,或主动踢人
 	onLeaveTable : function(userSession) {
@@ -18,7 +18,9 @@ var Table = Class.extend({
 	},
 	doBroadcast : function(category,method,ret,packetId,data) {
 		for (var k in this.userList) {
-			this.userList[k].send(category,method,ret,packetId,data);
+			if (this.userList[k].isConnect) {
+				this.userList[k].send(category,method,ret,packetId,data);
+			}
 		}
 	},
 	doOptBroadcast : function(category,method,ret,packetId,data,highPriority) {
@@ -31,6 +33,12 @@ var Table = Class.extend({
 	},
 	arrange_user_list: function(){
 		//清理内存
+		for (var k in this.userList) {
+			if (!this.userList[k].isConnect) {
+				this.userList[k].closeSocket();
+				this.userList[k] = null;
+			}
+		}
 	}
 });
 module.exports = Table;

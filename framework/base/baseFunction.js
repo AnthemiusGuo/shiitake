@@ -53,3 +53,7 @@ var lookup = function(root,path){
 
 exports.lookup = lookup;
 exports.isAbsolute = isAbsolute;
+
+exports.PLEASE_OVERWRITE_ME = function(){
+    console.trace("PLEASE OVERWRITE ME!!!");
+}

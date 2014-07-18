@@ -134,11 +134,16 @@ Table.prototype.onGameMsg_StartNot = function(category,method,data,ts,packetId,r
 }
 Table.prototype.onGameMsg_betAck = function(category,method,data,ts,packetId,ret) {
 	// {"c":"table","m":"betAck","d":{"total_bet_info":[0,0,2114,0],"my_bet_info":[0,0,2114,0]},"t":1405327264434,"s":3,"r":1}
-	consoleLog("game","下注情况");
-	consoleLog("game",ConfigMen[0]+":"+data.my_bet_info[0]+"/"+data.total_bet_info[0]+";"+
+	if (ret<0) {
+
+	} else {
+		consoleLog("game","下注情况");
+		consoleLog("game",ConfigMen[0]+":"+data.my_bet_info[0]+"/"+data.total_bet_info[0]+";"+
 						ConfigMen[1]+":"+data.my_bet_info[1]+"/"+data.total_bet_info[1]+";"+
 						ConfigMen[2]+":"+data.my_bet_info[2]+"/"+data.total_bet_info[2]+";"+
 						ConfigMen[3]+":"+data.my_bet_info[3]+"/"+data.total_bet_info[3]);
+	}
+	
 	// sendGame('game','joinTable',{prefer:0})
 }
 
@@ -256,6 +261,10 @@ gameSocket.onopen = function() {
 gameSocket.onmessage = function(e) {
 	recvLog("game",e.data);
 	var msg = JSON.parse(e.data);
+	if (msg.r<0) {
+		consoleLog("game",'<span class="red">'+msg.d.e+'</span>');
+		return;
+	} 
 	if (msg.c == "user") {
 		if (typeof(user["onGameMsg_"+msg.m])=="undefined") {
 			user.onMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
@@ -286,4 +295,8 @@ function send_bet(){
 	var data = {men:rand(1,4),point:rand(1000,4000)};
 	consoleLog("game","压注:"+ConfigMen[data.men-1]+":"+data.point);
 	sendGame('table','betReq',data)
+}
+
+function ask_zhuang(){
+	sendGame('table','askZhuang',{})
 }

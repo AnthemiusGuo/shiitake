@@ -43,7 +43,8 @@ config.servers = {
 					"jinhua":[200,180],
 					"tonghuashun":[100,90],
 					"baozi":[50,40],
-				}
+				},
+				'userZhuang':false
 			},
 	"zha-srv-1-2":{
 				"roomId":12,
@@ -61,7 +62,8 @@ config.servers = {
 				'openBig':{
 					"baozi":[110,100],
 					"tonghuashun":[1100.1000]
-				}
+				},
+				'userZhuang':false
 			},
 	"zha-srv-2-1":{
 				"roomId":21,
@@ -79,7 +81,8 @@ config.servers = {
 				'openBig':{
 					"baozi":[110,100],
 					"tonghuashun":[1100.1000]
-				}
+				},
+				'userZhuang':true
 			},
 	"zha-srv-3-1":{
 				"roomId":31,
@@ -97,6 +100,7 @@ config.servers = {
 				'openBig':{
 					"baozi":[110,100],
 					"tonghuashun":[1100.1000]
-				}
+				},
+				'userZhuang':true
 			},
 }

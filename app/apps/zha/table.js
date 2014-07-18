@@ -57,10 +57,8 @@ var Table = TablePublic.extend({
 	    this.zhuang_name = '未设置';
 	    this.innings = 0;
 	    this.zhuang_uid = 0;
-	    this.robot_uid = 0;
 	    this.zhuang_typ = 0;
 	    this.zhuang_user_info = {};
-	    this.robot_zhuang_venior = 0;
 	    this.zhuang_queue = {};
 
 	    this.online_rank_msg = [];
@@ -74,6 +72,8 @@ var Table = TablePublic.extend({
 	    this.thisRoundLimit = 0;
 
 	    this.bet_info_change = false;
+
+	    this.userZhuang = roomConfig.userZhuang;
 	},
 	doStart : function(){
 		this.canBet = false;
@@ -525,7 +525,9 @@ var Table = TablePublic.extend({
 		zhuang_result_send['get_exp'] = zhuang_exp;
 		zhuang_result_send['cc'] = zhuang_result;
 
+
 		if (this.zhuang_uid!=0){
+			var this_user = null;
 			//不是系统坐庄,写回数据
 			if (F.isset(this.userList[this.zhuang_uid].userInfo)  && this.userList[this.zhuang_uid].isConnect) {
 				this_user = this.userList[this.zhuang_uid];
@@ -545,6 +547,10 @@ var Table = TablePublic.extend({
     		//写回用户信息
 			dmManager.setDataChange("user","BaseInfo",{uid:this.zhuang_uid},{'credits':zhuang_credits,'exp':zhuang_exp,total_credits:zhuang_credits},function(ret,data){
 				if (ret>0) {
+					//同步一下从userinfo拿出来的数据
+					if (this_user!=null) {
+						this_user.onGetUserInfo();
+					}
 					
 				} else {
 				}
@@ -554,17 +560,18 @@ var Table = TablePublic.extend({
 	    //根据输赢,再去发数据
 	    for (var uid in user_get){
 	    	var credits = user_get[uid];
+	    	var this_user = null;
 	    	if (!F.isset(this.userList[uid])) {
 	    		//用户未登录,这个应该是错误的状态,不应该出现
 	    		//防止出错,直接发数据库请求
 	    		var ClientUser = require('app/apps/'+appTyp+'/client');
-	    		var this_user = new ClientUser(null);
+	    		this_user = new ClientUser(null);
 	    		this_user.isConnect = false;
 				this_user.isLogined = false;
 				this_user.uid = uid;
 				this.userList[uid] = this_user;
 	    	} else {
-	    		var this_user = this.userList[uid];
+	    		this_user = this.userList[uid];
 	    	}
 	    	if (credits>0){
 	            var real_credits = Math.round(credits*(1-room_water_ratio));
@@ -600,6 +607,10 @@ var Table = TablePublic.extend({
     		//写回用户信息
 			dmManager.setDataChange("user","BaseInfo",{uid:uid},{'credits':real_credits,'exp':exp,total_credits:real_credits},function(ret,data){
 				if (ret>0) {
+					//同步一下从userinfo拿出来的数据
+					if (this_user!=null) {
+						this_user.onGetUserInfo();
+					}
 					
 				} else {
 				}
@@ -644,20 +655,20 @@ var Table = TablePublic.extend({
 		var userSession = this.userList[uid];
 		if (this.canBet==false) {
 			logger.error("this.canBet");
-			userSession.sendErrPackFormat(packetSerId);
+			userSession.sendAckErr("table","betAck",-100,"当前牌桌不是下注阶段哦",packetSerId);
 			return;
 		}
 
 		if (this.thisRoundFull) {
 			logger.error("this.thisRoundFull");
-			userSession.sendErrPackFormat(packetSerId);
+			userSession.sendAckErr("table","betAck",-101,"这一轮全桌压注总额已经满了哦,等下一轮吧",packetSerId);
 			return;
 		}
 
 		logger.debug("userSession.credits",userSession.credits);
-		if (userSession.credits < point) {
-			logger.error("userSession.credits < point",userSession.credits);
-			userSession.sendErrPackFormat(packetSerId);
+		if (userSession.credits < point*10) {
+			logger.error("userSession.credits < point",userSession.credits,point);
+			userSession.sendAckErr("table","betAck",-102,"您需要保持您手头的钱数大于下注额的十倍哦",packetSerId);
 			return;
 		}
 
@@ -668,17 +679,18 @@ var Table = TablePublic.extend({
 
 	    this.bet_info_change = true;
 
-		userSession.credits -= point;
+		userSession.credits -= point*10;
 
 		//men 参数是1，2，3，4
-		
-	    if (false) {//Math.floor(this.user_bet_total+point)>Math.floor(this.zhuang_user_info.credits/10)) {
-	    	//停止压注
-	        //code
-	        //this.client.send({event:global.EVENT_CODE.ZHA_ADD_POINT,
-	        //                 ret:-1});
-	        return
-	    }
+		if (this.zhuang_uid>0) {
+			if (Math.floor(this.user_bet_total+point)>Math.floor(this.zhuang_user_info.credits/10)) {
+		    	//停止压注
+		    	this.thisRoundFull = true;
+		    	userSession.sendAckErr("table","betAck",-101,"这一轮全桌压注总额已经满了哦,等下一轮吧",packetSerId);
+		        return
+		    }
+		}
+	    
 		userSession.bet_info[men-1] +=point;
 		this.bet_info[men-1] +=point;
 		this.user_bet_total += point;
@@ -709,7 +721,7 @@ var Table = TablePublic.extend({
 		for (var k in this.userList) {
 			allUsersInfo[this.userList[k].uid] = this.userList[k].getUserShowInfo();
 		}
-		userSession.send("game","joinTableAck",1,0,{tableId:this.tableId,usersIn:allUsersInfo});
+		userSession.send("game","joinTableAck",1,0,{tableId:this.tableId,usersIn:allUsersInfo,userZhuang:this.userZhuang});
 		this.doOptBroadcast("table","joinNot",1,0,userSession.getUserShowInfo());
 		var now = new Date().getTime();
 		if (this.state !="AfterOpen") {

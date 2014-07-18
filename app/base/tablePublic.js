@@ -88,20 +88,20 @@ var TablePublic = Table.extend({
 		this.doOpen();
 	},
 	doStart : function(){
-		logger.error("PLEASE OVERWRITE ME!!!");
+		utils.PLEASE_OVERWRITE_ME();
 	},
 	doWaitBet : function(){
-		logger.error("PLEASE OVERWRITE ME!!!");
+		utils.PLEASE_OVERWRITE_ME();
 	},
 	doWaitOpen : function(){
-		logger.error("PLEASE OVERWRITE ME!!!");
+		utils.PLEASE_OVERWRITE_ME();
 	},
 	doOpen : function(){
-		logger.error("PLEASE OVERWRITE ME!!!");
+		utils.PLEASE_OVERWRITE_ME();
 	},
 
 	onJoinTable : function(userSession) {
-		logger.error("PLEASE OVERWRITE ME!!!");		
+		utils.PLEASE_OVERWRITE_ME();		
 	},
 	
 });

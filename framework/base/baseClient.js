@@ -25,6 +25,12 @@ var BaseClient = Class.extend({
 		}
 		this.send('error','packageErr',errorId,packetId,{e:errorInfo});
 	},
+	sendAckErr : function(cate,method,errorId,errorInfo,packetId) {
+		if (typeof(packetId)=="undefined" || packetId===null) {
+			packetId = 0;
+		}
+		this.send(cate,method,errorId,packetId,{e:errorInfo});
+	},
 	sendErrPackFormat: function(packetId) {
 		this.sendErr(-9995,"信令格式有误",packetId);
 	},
@@ -35,12 +41,17 @@ var BaseClient = Class.extend({
 			this.sendErr(-8998,"服务器尚未准备好,请稍后重试!");
 		}
 		
-		this.socket.close();
-		this.socket = null;
+		this.closeSocket();
 		this.isConnect = false;
 		//kick 后并不立刻删除本对象，只是置为不连接。
 		//因为 table 中可能这个用户对象还在使用，在 table 本局结束后再遍历所有 null 的对象，等待 GC 回收内存。
 		
+	},
+	closeSocket : function(){
+		if (this.socket) {
+			this.socket.close();
+			this.socket = null;
+		}
 	},
 	getUserShowInfo : function() {
 		if (!F.isset(this.userInfo)){
@@ -66,7 +77,7 @@ var BaseClient = Class.extend({
 	},
 	onGetUserInfo: function(){
 		//防出错
-		logger.error("PLEASE OVERWRITE ME!!!");
+		utils.PLEASE_OVERWRITE_ME();
 	}
 });
 
