@@ -298,5 +298,5 @@ function send_bet(){
 }
 
 function ask_zhuang(){
-	sendGame('table','askZhuang',{})
+	sendGame('table','askZhuangReq',{})
 }

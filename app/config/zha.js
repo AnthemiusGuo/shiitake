@@ -44,7 +44,8 @@ config.servers = {
 					"tonghuashun":[100,90],
 					"baozi":[50,40],
 				},
-				'userZhuang':false
+				'userZhuang':false,
+				'max_zhuang_round':0
 			},
 	"zha-srv-1-2":{
 				"roomId":12,
@@ -63,7 +64,8 @@ config.servers = {
 					"baozi":[110,100],
 					"tonghuashun":[1100.1000]
 				},
-				'userZhuang':false
+				'userZhuang':false,
+				'max_zhuang_round':0
 			},
 	"zha-srv-2-1":{
 				"roomId":21,
@@ -82,7 +84,8 @@ config.servers = {
 					"baozi":[110,100],
 					"tonghuashun":[1100.1000]
 				},
-				'userZhuang':true
+				'userZhuang':true,
+				'max_zhuang_round':3
 			},
 	"zha-srv-3-1":{
 				"roomId":31,
@@ -101,6 +104,7 @@ config.servers = {
 					"baozi":[110,100],
 					"tonghuashun":[1100.1000]
 				},
-				'userZhuang':true
+				'userZhuang':true,
+				'max_zhuang_round':3
 			},
 }

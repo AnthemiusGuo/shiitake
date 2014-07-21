@@ -59,7 +59,7 @@ var Table = TablePublic.extend({
 	    this.zhuang_uid = 0;
 	    this.zhuang_typ = 0;
 	    this.zhuang_user_info = {};
-	    this.zhuang_queue = {};
+	    this.zhuang_queue = [];
 
 	    this.online_rank_msg = [];
 	    this.update_online_rank_zeit = 0;
@@ -87,7 +87,15 @@ var Table = TablePublic.extend({
 		this.user_bet_info = {};
 	    this.user_bet_total = 0;
 
-		//没啥要做，给用户广播下
+	    //doStart之前已经整理过用户, 该踢掉的踢掉了.
+	    //检查是否下庄
+	    var checkIfXiaZhuang = this.checkIfXiaZhuang();
+	    if (checkIfXiaZhuang>0) {
+	    	logger.info("xiazhuang: reason as ",checkIfXiaZhuang);
+	    	this.doGetNextZhuang();
+	    }
+
+		//没啥要做，给用户广播下当前状态
 		this.doBroadcast("table","StartNot",1,0,{cd:this.stateConfig[this.state].timer});
 	},
 	doWaitBet : function(){
@@ -643,6 +651,9 @@ var Table = TablePublic.extend({
 	    logger.debug(user_result);
 	    //rpc 通知Lobby以下用户发生数据变化, 为了节约信令, 采用batch通知
 	    //upsteam无需通知,只要改变缓存内的值,直接可以生效
+
+	    
+
 	},
 	onBet : function(uid,men,point,packetSerId){
 		logger.info("onBet",uid,men,point);
@@ -732,6 +743,121 @@ var Table = TablePublic.extend({
 			userSession.send("table","OpenNot",1,0,{zhuang:this.zhuang_result_send,r:this.openResult,cd:this.stateConfig[this.state].timer-cd});
 		}
 	},
+	onAskZhuang : function(uid,data,packetSerId) {
+		var now = new Date().getTime();
+		if (!this.userZhuang) {
+			//不允许用户当庄
+			userSession.sendAckErr("table","askZhuangAck",-100,"这个房间不允许用户坐庄",packetSerId);
+			return;
+		}
+		if (!F.isset(this.userList[uid])){
+			//no this user
+			logger.error("no user for this uid:"+uid);
+			return;
+		}
+		for (var i = 0; i < this.zhuang_queue.length; i++) {
+			if (this.zhuang_queue[i].uid==uid){
+				userSession.sendAckErr("table","askZhuangAck",-101,"您已经报名成功",packetSerId);
+				return;
+			}
+		};
+		var userSession = this.userList[uid];
+		//检查允许上庄情况
+		if (userSession.userInfo.credits < this.roomConfig.room_zhuang_limit_low){
+			//钱不够,跳过
+			userSession.sendAckErr("table","askZhuangAck",-102,"您的余额不足,不可上庄",packetSerId);
+			return;
+		}
+
+		this.zhuang_queue.push({time:now,uid:uid});
+		userSession.send("game","askZhuangAck",1,0);
+	},
+	arrange_user_list: function(){
+		//清理内存
+		for (var k in this.userList) {
+			if (k == this.zhuang_uid) {
+				//庄下线继续当庄
+				continue;
+			}
+			if (!this.userList[k].isConnect) {
+				
+				this.userList[k].closeSocket();
+				this.userList[k] = null;
+			}
+		}
+		for (var i = 0; i < this.zhuang_queue.length; i++) {
+			if (!F.isset(this.zhuang_queue[i])) {
+				continue;
+			}
+			var info = this.zhuang_queue[i];
+			if (!F.isset(this.userList[info.uid])) {
+				this.zhuang_queue[i] = null;
+			}
+		};
+		this.userList = utils.clearUpHash(this.userList);
+		this.zhuang_queue = utils.clearUpArray(this.zhuang_queue);
+	},
+	checkIfXiaZhuang : function() {
+		if (!this.userZhuang){
+			return 0;//初级场系统坐庄，不下庄
+		}
+		
+		this_user = this.userList[this.zhuang_uid];
+
+		//机器人坐庄
+		if (this_user.is_robot==1) {
+			//检查有玩家报名庄不
+            return 2;
+        }
+        if (F.isset(this.zhuang_user_info.counter)) {
+        	this.zhuang_user_info.counter++;
+        } else {
+        	this.zhuang_user_info.counter = 1;
+        }
+
+		if (this.zhuang_user_info.counter >= this.roomConfig.max_zhuang_round){
+			return 1;
+		}
+		
+		
+		if (this_user.credits<this.roomConfig.room_zhuang_limit_low){
+			return 2;
+		}
+		return 0;
+	},
+	doGetNextZhuang : function() {
+		if (this.zhuang_queue.length>0) {
+			var thisQueue = this.zhuang_queue.shift();
+			if (!F.isset(this.userList[thisQueue.uid]) || this.userList[thisQueue.uid].isConnect==false) {
+				this.doGetNextZhuang();
+				return;
+			}
+			var this_user = this.userList[thisQueue.uid];
+			if (this_user.userInfo.credits < this.roomConfig.room_zhuang_limit_low){
+				//钱不够,跳过
+				this.doGetNextZhuang();
+				return;
+			}
+			//这个人可以!
+			this.doChangeZhuang(thisQueue.uid);
+		}
+		else 
+		{
+			if (this.userZhuang) {
+				this.doChangeZhuang(0);
+				logger.error('no one here for queue');
+			}
+		}
+	},
+	doChangeZhuang : function(uid) {
+		this.zhuang_uid = uid;
+		if (F.isset(this.userList[uid]) && uid!=0){
+			this.zhuang_user_info = this.userList[uid].userInfo;
+			this.zhuang_user_info.counter = 0;
+		} else {
+			this.zhuang_user_info = {counter:0};
+		}
+	}
 });
 
 module.exports = Table;

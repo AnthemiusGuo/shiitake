@@ -57,3 +57,30 @@ exports.isAbsolute = isAbsolute;
 exports.PLEASE_OVERWRITE_ME = function(){
     console.trace("PLEASE OVERWRITE ME!!!");
 }
+
+var clearUpArray = function(arr) { 
+  for(var i=0,len=arr.length;i<len;i++){ 
+    if(!arr[i] || arr[i]==null || arr[i] === undefined){ 
+      arr.splice(i,1); 
+      len--; 
+      i--; 
+    } 
+  } 
+  return arr; 
+} 
+
+var clearUpHash = function(hash) { 
+  var target = {};
+  for(var k in hash){ 
+    //不做深度整理
+    // if (typeof(hash[k]=="Object")) {
+    //   target[k] = clearUpHash(hash[k]);
+    // } else {
+    target[k] = hash[k];
+    // }
+  } 
+  return target; 
+} 
+
+exports.clearUpArray = clearUpArray;
+exports.clearUpHash = clearUpHash;

@@ -32,13 +32,7 @@ var Table = Class.extend({
 		//广播类，2秒钟最多一个，多了不广播;高优先级强制广播
 	},
 	arrange_user_list: function(){
-		//清理内存
-		for (var k in this.userList) {
-			if (!this.userList[k].isConnect) {
-				this.userList[k].closeSocket();
-				this.userList[k] = null;
-			}
-		}
+		utils.PLEASE_OVERWRITE_ME();
 	}
 });
 module.exports = Table;
