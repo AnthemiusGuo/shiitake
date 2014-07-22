@@ -96,7 +96,14 @@ var Table = TablePublic.extend({
 	    }
 
 		//没啥要做，给用户广播下当前状态
-		this.doBroadcast("table","StartNot",1,0,{cd:this.stateConfig[this.state].timer});
+		var zhuang_showInfo = {};
+
+		if (this.zhuang_uid!=0){
+			if (F.isset(this.userList[this.zhuang_uid])) {
+				zhuang_showInfo = this.userList[this.zhuang_uid].getUserShowInfo();
+			}
+		}
+		this.doBroadcast("table","StartNot",1,0,{cd:this.stateConfig[this.state].timer,zhuang_uid:this.zhuang_uid,zhuang_info:zhuang_showInfo});
 	},
 	doWaitBet : function(){
 		//没啥要做，给用户广播下
@@ -429,7 +436,7 @@ var Table = TablePublic.extend({
 		}
 	},
 	_openCardsByRealRandom: function(){
-		logger.info("_openCardsByRealRandom");
+		logger.debug("_openCardsByRealRandom");
 		var tempPai = [];
 		var counter = 0;
 		for (var k in this.target_card) {
@@ -446,6 +453,22 @@ var Table = TablePublic.extend({
 		}
 
 		return tempPai;
+	},
+	_rpcCallUserChangeBatch : function(){
+		for (var k in this.uidChanged){
+			if (this.uidChanged[k]==0) {
+				//not write back yet, so don't call rpc
+				return;
+			}
+		}
+		var uids = this.uidChanged.keys;
+		logger("_rpcCallUserChangeBatch",uids);
+		//rpc 通知Lobby以下用户发生数据变化, 为了节约信令, 采用batch通知
+	    //upsteam无需通知,只要改变缓存内的值,直接可以生效
+	    //typ,category,method,id,params){
+	    rpc.call("lobby","user","batchReload",{broadcast:true},{uids:uids});
+
+		this.uidChanged = {};
 	},
 	doOpenAwards : function(){
 		//发奖
@@ -467,6 +490,8 @@ var Table = TablePublic.extend({
 
 	    var user_exp = {};
 	    var zhuang_exp = 0;
+
+	    this.uidChanged = {};
 	    logger.debug("this.user_bet_info:",this.user_bet_info);
 
 	    //不管用户在线不,先计算输赢
@@ -507,6 +532,7 @@ var Table = TablePublic.extend({
 	                user_get[uid] += change_credits;
 	            }
 	        }
+	        this.uidChanged[uid]=0;
 	    }
 
 	    //用户总收益, 用于统计分析
@@ -551,6 +577,7 @@ var Table = TablePublic.extend({
 				//通知用户				
 				this.userList[this.zhuang_uid].send("table","OpenNot",1,0,{zhuang_me:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
 	    	}
+	    	this.uidChanged[this.zhuang_uid]=0;
 	    	//用户加经验,钱
     		//写回用户信息
 			dmManager.setDataChange("user","BaseInfo",{uid:this.zhuang_uid},{'credits':zhuang_credits,'exp':zhuang_exp,total_credits:zhuang_credits},function(ret,data){
@@ -559,7 +586,8 @@ var Table = TablePublic.extend({
 					if (this_user!=null) {
 						this_user.onGetUserInfo();
 					}
-					
+					this.uidChanged[this.zhuang_uid]=1;
+					this._rpcCallUserChangeBatch();
 				} else {
 				}
 			});
@@ -619,7 +647,8 @@ var Table = TablePublic.extend({
 					if (this_user!=null) {
 						this_user.onGetUserInfo();
 					}
-					
+					this.uidChanged[uid]=1;
+					this._rpcCallUserChangeBatch();
 				} else {
 				}
 			});
@@ -629,14 +658,18 @@ var Table = TablePublic.extend({
 	    	if (F.isset(user_get[uid])) {
 	    		continue;
 	    	}
+	    	if (uid==this.zhuang_uid) {
+	    		continue;
+	    	}
 	    	this.userList[uid].send("table","OpenNot",1,0,{zhuang:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
 	    }
 	    
 	    this.zhuang_result_send = zhuang_result_send;
 	    this.openResult = openResult;
-	    if(this.zhuang_uid!=0){
-	        this_user = user_get_user_base(this.zhuang_uid);
-	        if(this_user['is_robot']!=1){
+
+	    if(this.zhuang_uid!=0) {
+	        var this_user = this.userList[this.zhuang_uid];
+	        if (this_user.is_robot!=1) {
 	            player_win_credts += zhuang_get;
 	        }
 	    }
@@ -649,9 +682,6 @@ var Table = TablePublic.extend({
 	    }
 		
 	    logger.debug(user_result);
-	    //rpc 通知Lobby以下用户发生数据变化, 为了节约信令, 采用batch通知
-	    //upsteam无需通知,只要改变缓存内的值,直接可以生效
-
 	    
 
 	},
@@ -667,6 +697,11 @@ var Table = TablePublic.extend({
 		if (this.canBet==false) {
 			logger.error("this.canBet");
 			userSession.sendAckErr("table","betAck",-100,"当前牌桌不是下注阶段哦",packetSerId);
+			return;
+		}
+		if (this.zhuang_uid==uid) {
+			logger.error("is zhuang");
+			userSession.sendAckErr("table","betAck",-103,"您是庄家,不能下注",packetSerId);
 			return;
 		}
 
@@ -745,14 +780,15 @@ var Table = TablePublic.extend({
 	},
 	onAskZhuang : function(uid,data,packetSerId) {
 		var now = new Date().getTime();
-		if (!this.userZhuang) {
-			//不允许用户当庄
-			userSession.sendAckErr("table","askZhuangAck",-100,"这个房间不允许用户坐庄",packetSerId);
-			return;
-		}
 		if (!F.isset(this.userList[uid])){
 			//no this user
 			logger.error("no user for this uid:"+uid);
+			return;
+		}
+		var userSession = this.userList[uid];
+		if (!this.userZhuang) {
+			//不允许用户当庄
+			userSession.sendAckErr("table","askZhuangAck",-100,"这个房间不允许用户坐庄",packetSerId);
 			return;
 		}
 		for (var i = 0; i < this.zhuang_queue.length; i++) {
@@ -801,6 +837,10 @@ var Table = TablePublic.extend({
 		if (!this.userZhuang){
 			return 0;//初级场系统坐庄，不下庄
 		}
+		if (this.zhuang_uid==0) {
+			//木有人上庄
+			return 3;
+		}
 		
 		this_user = this.userList[this.zhuang_uid];
 
@@ -809,13 +849,15 @@ var Table = TablePublic.extend({
 			//检查有玩家报名庄不
             return 2;
         }
-        if (F.isset(this.zhuang_user_info.counter)) {
-        	this.zhuang_user_info.counter++;
-        } else {
-        	this.zhuang_user_info.counter = 1;
+        if (this.roomConfig.max_zhuang_round > 0) {
+        	if (F.isset(this.zhuang_user_info.counter)) {
+	        	this.zhuang_user_info.counter++;
+	        } else {
+	        	this.zhuang_user_info.counter = 1;
+	        }
         }
 
-		if (this.zhuang_user_info.counter >= this.roomConfig.max_zhuang_round){
+		if (this.roomConfig.max_zhuang_round > 0 && this.zhuang_user_info.counter >= this.roomConfig.max_zhuang_round){
 			return 1;
 		}
 		
@@ -828,6 +870,7 @@ var Table = TablePublic.extend({
 	doGetNextZhuang : function() {
 		if (this.zhuang_queue.length>0) {
 			var thisQueue = this.zhuang_queue.shift();
+			logger.info("get new queue zhuang uid as",thisQueue);
 			if (!F.isset(this.userList[thisQueue.uid]) || this.userList[thisQueue.uid].isConnect==false) {
 				this.doGetNextZhuang();
 				return;
@@ -850,6 +893,7 @@ var Table = TablePublic.extend({
 		}
 	},
 	doChangeZhuang : function(uid) {
+		logger.info("change zhuang!!!!= uid as",uid);
 		this.zhuang_uid = uid;
 		if (F.isset(this.userList[uid]) && uid!=0){
 			this.zhuang_user_info = this.userList[uid].userInfo;

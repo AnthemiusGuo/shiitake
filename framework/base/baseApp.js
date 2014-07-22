@@ -106,24 +106,7 @@ var BaseApp = Class.extend({
 	},
 	
 	doLogin : function(uid,userSession,packetId) {
-		if (F.isset(this.userSocketManager.idClientMapping[uid])) {
-			this.userSocketManager.idClientMapping[uid].kickUser();
-		}
-
-		//获取用户信息
-		dmManager.getData("user","BaseInfo",{uid:uid},function(ret,data){
-			if (ret>0) {
-				this.userSocketManager.idClientMapping[uid] = userSession;
-				userSession.isLogined = true;
-				userSession.id = uid;
-				userSession.uid = uid;
-				userSession.userInfo = data;
-				userSession.onGetUserInfo();
-				userSession.send("user","loginAck",1,packetId,data)
-			} else {
-				userSession.send("user","loginAck",ret,packetId,{e:"登录失败"})
-			}
-		}.bind(this));
+		utils.PLEASE_OVERWRITE_ME();
 	},
 	rpc_login : function(typ,id,userSession,packetId) {
 		logger.info("recv rpc login from ",typ+"/"+id);

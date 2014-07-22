@@ -31,7 +31,7 @@ var RpcManager = Class.extend({
 	//method: 调用方法名
 	//id: 如果这个rpc需要负载均衡,这个id用于命中负载均衡器
 	//params: 参数
-	run : function(typ,category,method,id,params){
+	call : function(typ,category,method,id,params){
 		this.rpcServers[typ].runCommnd(category,method,id,params);
 	}
 });

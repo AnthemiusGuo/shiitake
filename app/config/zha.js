@@ -44,7 +44,7 @@ config.servers = {
 					"tonghuashun":[100,90],
 					"baozi":[50,40],
 				},
-				'userZhuang':false,
+				'userZhuang':true,
 				'max_zhuang_round':0
 			},
 	"zha-srv-1-2":{
@@ -64,7 +64,7 @@ config.servers = {
 					"baozi":[110,100],
 					"tonghuashun":[1100.1000]
 				},
-				'userZhuang':false,
+				'userZhuang':true,
 				'max_zhuang_round':0
 			},
 	"zha-srv-2-1":{

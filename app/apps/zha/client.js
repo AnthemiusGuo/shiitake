@@ -17,6 +17,7 @@ var ZhaClient = BaseClient.extend({
 	onGetUserInfo : function() {
 		//缓存用户的钱,用于压注校验
 		this.credits  = this.userInfo.credits;
+		
 	},
 	reset : function(){
 		this.bet_info = [0,0,0,0];

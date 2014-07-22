@@ -94,14 +94,19 @@ function sendLog(typ,msg) {
 	console.log("send");
 	$("#send").append("<b>sock "+typ+"</b>:"+log+"<br/>");
 }
-
+var recvCounter = 0;
 function recvLog(typ,msg) {
 	if (typeof(msg)=="object") {
 		var log = JSON.stringify(msg);
 	} else {
 		var log = msg;
 	}
+	if (recvCounter>10){
+		$("#recv").html("");
+		recvCounter = 0;
+	}
 	$("#recv").append("<b>sock "+typ+"</b>:"+log+"<br/>");
+	recvCounter++;
 }
 
 function sendGame(category,method,data) {
@@ -129,6 +134,8 @@ var Table = function(tableId){
 	this.tableId = tableId;
 }
 Table.prototype.onGameMsg_StartNot = function(category,method,data,ts,packetId,ret) {
+	$("#console").html("");
+	$("#send").html("");
 	consoleLog("game","开始洗牌/摇骰子");
 	// sendGame('game','joinTable',{prefer:0})
 }

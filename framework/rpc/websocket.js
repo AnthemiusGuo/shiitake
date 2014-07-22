@@ -105,40 +105,59 @@ var WebSocketRPC = RpcServer.extend({
 		} else {
 			cb = this.errorOnSend;
 		}
-		
-		//寻找服务器
-		var thisServer = this.findServer(id);
-		if (thisServer==null) {
-			cb(-1001,"没有找到合适的服务器路由",req);
-			return;
-		}
-		if (thisServer.connected==false){
-			cb(-1000,"服务器尚未链接",req);
-			return;
-		}
-		if (method!= "login" && method!="ping") {
-			if (thisServer.ready==false) {
-				cb(-999,"服务器尚未准备好",req);
-				self.requestQueue[reqId] = null;
-  				return;
-			}
-		}
+
 		var ts =  new Date().getTime();
 		var package = {'c':category,'m':method,'d':data,'t':ts,'s':reqId,'r':0};
-		thisServer.socket.send(JSON.stringify(package), function(error) {
-    		// if error is null, the send has been completed,
-    		// otherwise the error object will indicate what failed.
-    		if (error!=null) {
-    			cb(-998,"服务器发送失败",req);
-				self.requestQueue[reqId] = null;
-  				return;
-    		}
-		});
-		if (F.isset(this.requestQueue[reqId])) {
-			var self = this;
-			req.timeoutTick = setTimeout(function(){
-				self.onReqTimeout(reqId)
-			},1000);
+
+		if (id.broadcast) {
+			//广播不需要找服务器,也不支持回调
+			for (var k in this.allServers) {
+				var thisServer = this.allServers[k];
+				if (thisServer.connected==false){
+					continue;
+				}
+				if (method!= "login" && method!="ping") {
+					if (thisServer.ready==false) {
+						continue;
+					}
+				}
+				thisServer.socket.send(JSON.stringify(package));
+			}
+		} else {
+			//单播
+			//寻找服务器
+			var thisServer = this.findServer(id);
+			if (thisServer==null) {
+				cb(-1001,"没有找到合适的服务器路由",req);
+				return;
+			}
+			if (thisServer.connected==false){
+				cb(-1000,"服务器尚未链接",req);
+				return;
+			}
+			if (method!= "login" && method!="ping") {
+				if (thisServer.ready==false) {
+					cb(-999,"服务器尚未准备好",req);
+					self.requestQueue[reqId] = null;
+	  				return;
+				}
+			}
+			
+			thisServer.socket.send(JSON.stringify(package), function(error) {
+	    		// if error is null, the send has been completed,
+	    		// otherwise the error object will indicate what failed.
+	    		if (error!=null) {
+	    			cb(-998,"服务器发送失败",req);
+					self.requestQueue[reqId] = null;
+	  				return;
+	    		}
+			});
+			if (F.isset(this.requestQueue[reqId])) {
+				var self = this;
+				req.timeoutTick = setTimeout(function(){
+					self.onReqTimeout(reqId)
+				},1000);
+			}
 		}
 	},
 
