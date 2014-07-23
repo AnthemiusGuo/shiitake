@@ -1,3 +1,14 @@
+/node_modules/async/.travis.yml
+/node_modules/async/LICENSE
+/node_modules/async/README.md
+/node_modules/async/component.json
+/node_modules/async/lib/async.js
+/node_modules/async/package.json
+/node_modules/log4js/.bob/lint/jshint.out
+/node_modules/log4js/lib/appenders/fileSync.js
+/node_modules/log4js/test/fileSyncAppender-test.js
+/node_modules/log4js/test/gelfAppender-test.js.orig
+/node_modules/redis/connection_breaker.js
 /node_modules/hiredis/COPYING
 /node_modules/hiredis/README.md
 /node_modules/hiredis/bench.js

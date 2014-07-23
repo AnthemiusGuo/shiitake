@@ -5,6 +5,8 @@ var LobbyServer = BaseServer.extend({
 		this.onlineUsers = {};
 	},
 	doLogin : function(uid,userSession,packetId) {
+		//用户密码并非这里校验, 使用web校验, 所以这里需要校验web生成的ticket
+		
 		if (F.isset(this.userSocketManager.idClientMapping[uid])) {
 			this.userSocketManager.idClientMapping[uid].kickUser();
 		}
@@ -25,8 +27,9 @@ var LobbyServer = BaseServer.extend({
 		}.bind(this));
 	},
 	_genTicket : function(uid){
+
 		var now = new Date().getTime();
-		
+
 	}
 });
 module.exports = LobbyServer;
