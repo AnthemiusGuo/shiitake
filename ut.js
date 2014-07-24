@@ -1,7 +1,7 @@
 global.Class = require('node.class');
 global.utils = require('framework/base/baseFunction');
 global.F = require('phpjs');
-
+global.async = require("async");
 var log4js = require('log4js');
 log4js.replaceConsole();
 global.logger = log4js.getLogger();
@@ -106,11 +106,89 @@ global.logicApp = new LogicApp(appTyp,appId,config.servers[appTyp].serverList[ap
 
 var roomConfigs = require('app/config/zha');
 var roomConfig = roomConfigs.servers["zha-srv-1-1"];
+ var uid = 21;
 
-var Table =  require('app/apps/zha/table');
-var table = new Table(1,roomConfig);
-table.user_bet_info = {};
-table.user_bet_info['21']  = { '1': 1000 ,'2':1000,'3':1200,'4':10000} ;
-table.user_bet_info['22']  = { '1': 0 ,'2':0,'3':12000,'4':100} ;
-table.user_bet_info['23']  = { '1': 100 ,'2':20000,'3':0,'4':0} ;
-table.doOpen();
+dmManager.getData("user","BaseInfo",{uid:uid},function(ret,data){
+    logger.debug("getInfo result",ret,data);
+    if (ret>0) {
+        
+    } else {
+        // callback(-4,"no user info");
+    }
+});
+
+// var Table =  require('app/apps/zha/table');
+// var table = new Table(1,roomConfig);
+// table.user_bet_info = {};
+// table.user_bet_info['21']  = { '1': 1000 ,'2':1000,'3':1200,'4':10000} ;
+// table.user_bet_info['22']  = { '1': 0 ,'2':0,'3':12000,'4':100} ;
+// table.user_bet_info['23']  = { '1': 100 ,'2':20000,'3':0,'4':0} ;
+// table.doOpen();
+
+// var async = require('async');
+
+// // async.waterfall([
+// //     function (callback) {
+// //         console.log('waterfall 1');
+// //         setTimeout(function () {
+// //             console.log('waterfall 1 done.');
+// //             callback(null, 1);
+// //         }, 500);
+// //     },
+// //     function (arg, callback) {
+// //         console.trace('waterfall 2');
+// //         setTimeout(function () {
+// //             console.log('waterfall 2 done.');
+// //             callback(null, arg + 1);
+// //         }, 300);
+// //     },
+// //     function (arg, callback) {
+// //         console.log('waterfall 3');
+// //         setTimeout(function () {
+// //             console.log('waterfall 3 done.');
+// //             callback(null, arg + 1);
+// //         }, 100);
+// //     }
+// // ], function (err) {
+// //     if (err) { throw err; }
+// //     console.log('waterfall all done.');
+// // });
+// var uid = 21;
+// async.waterfall([
+//             function verifyTicket(callback) {
+//                 logger.debug("verifyTicket");
+//                 var real_key = "user/ticket/"+uid;
+//                 kvdb.get(real_key,function(err, reply) {
+//                     logger.debug("verifyTicket result",reply);
+//                     if (err) {
+//                         callback(-2,err);
+//                         return;
+//                     }
+//                     if (reply===null) {
+//                         callback(-1);
+//                         return;
+//                     }
+//                     //hit cache!!!
+//                     callback(-2,reply);
+//                 });
+//             },
+//             function getInfo(cache, callback){
+//                 logger.debug("getInfo",cache);
+//                 dmManager.getData("user","BaseInfo",{uid:uid},function(ret,data){
+//                     logger.debug("getInfo result",ret,data);
+//                     callback(null, data);
+//                 });
+//             },
+//             function sendBack(data, callback){
+//                 logger.debug("sendBack",data);
+//                 // arg1 now equals 'three'
+//                 callback(null, 'done');
+//             }
+//         ], function doneAll (err, result) {
+//             logger.debug("doneAll",err,result);
+//             if (err) {
+//                 logger.error("doneAll with err",err,result);
+//             }
+//             //userSession.send("user","loginAck",ret,packetId,{e:"登录失败"})
+//             // result now equals 'done'    
+//         });

@@ -1,6 +1,7 @@
 global.Class = require('node.class');
 global.utils = require('framework/base/baseFunction');
 global.F = require('phpjs');
+global.async = require("async");
 
 var log4js = require('log4js');
 log4js.replaceConsole();

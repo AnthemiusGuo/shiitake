@@ -17,7 +17,8 @@
 // Let the library know where WebSocketMain.swf is:
 WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
 var packetId = 0;
-
+var uid = 21;
+var webUrl = "http://127.0.0.1/shiitake/shiitake/web_demo/server.php";
 
 function rand(min, max) {
   //  discuss at: http://phpjs.org/functions/rand/
@@ -243,60 +244,76 @@ Game.prototype.onGameMsg_unknown = function(category,method,data,ts,packetId,ret
 	consoleLog("game","unkonwn package!!!");
 }
 
-user = new User(21);
+user = new User(uid);
 table = new Table(1);
 game = new Game(1);
-// Write your code in the same way as for native WebSocket:
-var lobbySocket = new WebSocket("ws://127.0.0.1:3000");
-lobbySocket.onopen = function() {
-	consoleLog("lobby","open");
-	sendLobby('user','loginReq',{uid:user.uid})
-};
-lobbySocket.onmessage = function(e) {
-// Receives a message.
-	recvLog("lobby",e.data);
-};
-lobbySocket.onclose = function() {
-	consoleLog("lobby","closed");
-};
+var lobbySocket;
+var gameSocket;
+var ticket = "";
 
-var gameSocket = new WebSocket("ws://127.0.0.1:3010");
-gameSocket.onopen = function() {
-	consoleLog("game","open");
-	sendGame('user','loginReq',{uid:user.uid})
-};
-gameSocket.onmessage = function(e) {
-	recvLog("game",e.data);
-	var msg = JSON.parse(e.data);
-	if (msg.r<0) {
-		consoleLog("game",'<span class="red">'+msg.d.e+'</span>');
+$.getJSON(webUrl+"?m=user&a=login&uid="+uid,function(json){
+	// Write your code in the same way as for native WebSocket:
+	if (json.ret!=1) {
+		consoleLog("web","login failed!!!");
 		return;
-	} 
-	if (msg.c == "user") {
-		if (typeof(user["onGameMsg_"+msg.m])=="undefined") {
-			user.onMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
-		} else {
-			user["onGameMsg_"+msg.m](msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
-		}
-	} else if (msg.c == "error") {
-		consoleLog("game",'<span class="red">'+msg.d.e+'</span>');
-	} else if (msg.c == "table") {
-		if (typeof(table["onGameMsg_"+msg.m])=="undefined") {
-			table.onMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
-		} else {
-			table["onGameMsg_"+msg.m](msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
-		}
-	} else if (msg.c == "game") {
-		if (typeof(game["onGameMsg_"+msg.m])=="undefined") {
-			game.onMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
-		} else {
-			game["onGameMsg_"+msg.m](msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
-		}
 	}
-};
-gameSocket.onclose = function() {
-	consoleLog("game","closed");
-};
+	ticket = json.data.ticket;
+
+	lobbySocket = new WebSocket("ws://127.0.0.1:3000");
+	lobbySocket.onopen = function() {
+		consoleLog("lobby","open");
+		sendLobby('user','loginReq',{uid:user.uid,ticket:ticket})
+	};
+	lobbySocket.onmessage = function(e) {
+	// Receives a message.
+		recvLog("lobby",e.data);
+		var msg = JSON.parse(e.data);
+		if (msg.r<0) {
+			consoleLog("lobby",'<span class="red">'+msg.d.e+'</span>');
+			return;
+		} 
+	};
+	lobbySocket.onclose = function() {
+		consoleLog("lobby","closed");
+	};
+	gameSocket = new WebSocket("ws://127.0.0.1:3010");
+	gameSocket.onopen = function() {
+		consoleLog("game","open");
+		sendGame('user','loginReq',{uid:user.uid,ticket:ticket})
+	};
+	gameSocket.onmessage = function(e) {
+		recvLog("game",e.data);
+		var msg = JSON.parse(e.data);
+		if (msg.r<0) {
+			consoleLog("game",'<span class="red">'+msg.d.e+'</span>');
+			return;
+		} 
+		if (msg.c == "user") {
+			if (typeof(user["onGameMsg_"+msg.m])=="undefined") {
+				user.onMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+			} else {
+				user["onGameMsg_"+msg.m](msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+			}
+		} else if (msg.c == "error") {
+			consoleLog("game",'<span class="red">'+msg.d.e+'</span>');
+		} else if (msg.c == "table") {
+			if (typeof(table["onGameMsg_"+msg.m])=="undefined") {
+				table.onMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+			} else {
+				table["onGameMsg_"+msg.m](msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+			}
+		} else if (msg.c == "game") {
+			if (typeof(game["onGameMsg_"+msg.m])=="undefined") {
+				game.onMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+			} else {
+				game["onGameMsg_"+msg.m](msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+			}
+		}
+	};
+	gameSocket.onclose = function() {
+		consoleLog("game","closed");
+	};
+});
 
 function send_bet(){
 	var data = {men:rand(1,4),point:rand(1000,4000)};
@@ -307,3 +324,11 @@ function send_bet(){
 function ask_zhuang(){
 	sendGame('table','askZhuangReq',{})
 }
+
+setInterval(function(){
+	$.getJSON(webUrl+"?m=user&a=refresh&uid="+uid,function(json){
+		if (typeof(json.data.ticket)!="undefined"){
+			ticket = json.data.ticket;	
+		}
+	});
+},180000)

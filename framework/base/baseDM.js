@@ -74,12 +74,46 @@ var BaseDM = Class.extend({
 		});
 	},
 	doOneLineChangeUpdateWithCache: function(method,id,data,sql,cb){
+
 		var self = this;
-		if (!F.isset(this.data[this.cacheCategory]) || !F.isset(this.data[this.cacheCategory][method]) || !F.isset(this.data[this.cacheCategory][method][id])) {
-			//直接数据库, 删除cache以便下次自动更新
-			this.delCache(method,id);
-			return;
-		}
+		async.waterfall([
+            function changeCache(callback) {
+                if (!F.isset(this.data[this.cacheCategory]) || !F.isset(this.data[this.cacheCategory][method]) || !F.isset(this.data[this.cacheCategory][method][id])) {
+					//直接数据库, 删除cache以便下次自动更新
+					this.delCache(method,id);
+					callback(null);
+				} else {
+					var real_key = this.getCacheKey(method,key);
+					kvdb.hincrby(real_key,field,1*value,redis.print);	
+				}
+            },
+            function getDB(callback){
+                db.query(sql, function(err, rows, fields) {
+		    		if (err) {
+		    			callback(-2,err);
+		    			return;
+		    		}
+		    		if (rows.length==0) {
+		    			callback(-1);
+		    			return;
+		    		}
+		    		var info = rows[0];
+
+		    		// logger.debug("db get user",userInfo);
+		    		self.setCacheHash(cacheMethod,id,info);
+		    		callback(1,info);
+		    	});
+            }
+        ], function doneAll (err, result) {
+            if (err && err<=0) {
+                logger.error("doneAll with err",err,result);
+                cb(err,result);
+            } else {
+            	cb(1,result);
+            }
+            
+        });	
+		
 		for (var k in data) {
 			this.changeHashFieldCache(method,id,k,data[k]);			
 		}
@@ -92,23 +126,54 @@ var BaseDM = Class.extend({
 	},
 	doOneLineSelectWithCache: function(cacheMethod,id,sql,cb){
 		var self = this;
-		this.getCacheHash(cacheMethod,id,cb,function(ret,data){
-			db.query(sql, function(err, rows, fields) {
-	    		if (err) {
-	    			cb(-2,err);
-	    			return;
-	    		}
-	    		if (rows.length==0) {
-	    			cb(-1);
-	    			return;
-	    		}
-	    		var info = rows[0];
+		async.waterfall([
+            function getCacheHash(callback) {
+                if (!this.useCache) {
+					callback(null);
+					return;
+				}
+				var real_key = this.getCacheKey(method,key);
+				kvdb.hgetall(real_key, function(err, reply) {
+				    if (err) {
+				    	callback(-2,err);
+				    	return;
+				    }
+				    if (reply===null) {
+				    	callback(null);
+				    	return;
+				    }
+				    //hit cache!!!
+				    self.setData(method,key,reply);
+				    logger.trace(method,key,"hit cache!!!");
+				    callback(1,reply);
+				});
+            },
+            function getDB(callback){
+                db.query(sql, function(err, rows, fields) {
+		    		if (err) {
+		    			callback(-2,err);
+		    			return;
+		    		}
+		    		if (rows.length==0) {
+		    			callback(-1);
+		    			return;
+		    		}
+		    		var info = rows[0];
 
-	    		// logger.debug("db get user",userInfo);
-	    		self.setCacheHash(cacheMethod,id,info);
-	    		cb(1,info);
-	    	});
-		});
+		    		// logger.debug("db get user",userInfo);
+		    		self.setCacheHash(cacheMethod,id,info);
+		    		callback(1,info);
+		    	});
+            }
+        ], function doneAll (err, result) {
+            if (err && err<=0) {
+                logger.error("doneAll with err",err,result);
+                cb(err,result);
+            } else {
+            	cb(1,result);
+            }
+            
+        });	
 	}
 });
 module.exports = BaseDM;

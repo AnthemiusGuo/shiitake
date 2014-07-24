@@ -455,6 +455,7 @@ var Table = TablePublic.extend({
 		return tempPai;
 	},
 	_rpcCallUserChangeBatch : function(){
+		logger.info("_rpcCallUserChangeBatch",this.uidChanged);
 		for (var k in this.uidChanged){
 			if (this.uidChanged[k]==0) {
 				//not write back yet, so don't call rpc
@@ -462,7 +463,7 @@ var Table = TablePublic.extend({
 			}
 		}
 		var uids = this.uidChanged.keys;
-		logger("_rpcCallUserChangeBatch",uids);
+		logger.info("_rpcCallUserChangeBatch",uids);
 		//rpc 通知Lobby以下用户发生数据变化, 为了节约信令, 采用batch通知
 	    //upsteam无需通知,只要改变缓存内的值,直接可以生效
 	    //typ,category,method,id,params){

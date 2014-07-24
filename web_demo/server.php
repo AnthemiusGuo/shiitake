@@ -1,6 +1,21 @@
 <?php
 #https://github.com/nicolasff/phpredis
 #install it first
+
+function genTicket($uid){
+	global $redis;
+	$now = time();
+	$redis_key = "user/ticket/".$uid;
+	$ticket = md5(substr(md5($now.$uid."XWR555"),5,32-5));
+	$redis->set($redis_key,$ticket);
+	//一小时过期
+	$redis->setTimeout($redis_key, 3600);
+	return $ticket;
+}
+
+header ("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1 
+header ("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+
 if (!isset($_GET['m'])){
 	$m = "index";
 } else {

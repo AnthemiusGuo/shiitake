@@ -29,8 +29,10 @@ export NODE_ENV=development
 
 code structure
 ----------
-app/	all codes
-app/app 	logic codes of init/time circle for per server
-app/base  	base functions/classes
-app/controllers		rpc functions
-app/rpc 	rpc codes for connect to other rpc servers 
+
+
+
+note
+----------
+
+* for match server and so on, one connection at once!!! because 
