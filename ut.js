@@ -83,7 +83,7 @@ if (config.mysql!=undefined) {
 
 /*prepare redis*/
 if (config.redis!=undefined) {
-    var redis = require("redis");
+    global.redis = require("redis");
     global.kvdb = redis.createClient();
     kvdb.allReady = false;
     // if you'd like to select database 3, instead of 0 (default), call
@@ -108,15 +108,11 @@ var roomConfigs = require('app/config/zha');
 var roomConfig = roomConfigs.servers["zha-srv-1-1"];
  var uid = 21;
 
-dmManager.getData("user","BaseInfo",{uid:uid},function(ret,data){
-    logger.debug("getInfo result",ret,data);
-    if (ret>0) {
-        
-    } else {
-        // callback(-4,"no user info");
-    }
+var keys = {uid:uid};
+var changes = {'credits':10000,'exp':1000,total_credits:10000};
+dmManager.setDataChange("user","BaseInfo",keys,changes,function(ret,data){
+    logger.info(ret,data);
 });
-
 // var Table =  require('app/apps/zha/table');
 // var table = new Table(1,roomConfig);
 // table.user_bet_info = {};

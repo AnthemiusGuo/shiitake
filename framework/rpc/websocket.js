@@ -96,7 +96,7 @@ var WebSocketRPC = RpcServer.extend({
 		logger.error(ret,errorInfo,req);
 	},
 	runCommand : function(category,method,id,data,cb){
-		logger.debug("websocket","runCommand",category,method,id,data);
+		logger.info("websocket","runCommand",category,method,id,data);
 		this.requestId++;
 		var reqId = this.requestId;
 		var req = {reqId:reqId,category:category,method:method,id:id,params:data,cb:cb};

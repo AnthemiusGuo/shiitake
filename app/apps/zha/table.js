@@ -462,7 +462,7 @@ var Table = TablePublic.extend({
 				return;
 			}
 		}
-		var uids = this.uidChanged.keys;
+		var uids = F.array_keys(this.uidChanged);
 		logger.info("_rpcCallUserChangeBatch",uids);
 		//rpc 通知Lobby以下用户发生数据变化, 为了节约信令, 采用batch通知
 	    //upsteam无需通知,只要改变缓存内的值,直接可以生效
@@ -591,7 +591,7 @@ var Table = TablePublic.extend({
 					this._rpcCallUserChangeBatch();
 				} else {
 				}
-			});
+			}.bind(this));
 		}
 
 	    //根据输赢,再去发数据
@@ -652,7 +652,7 @@ var Table = TablePublic.extend({
 					this._rpcCallUserChangeBatch();
 				} else {
 				}
-			});
+			}.bind(this));
 	    }
 	    //未下注的人的广播
 	    for (var uid in this.userList){

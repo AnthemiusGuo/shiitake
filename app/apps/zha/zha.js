@@ -47,7 +47,7 @@ var ZhaServer = GameServer.extend({
             function getInfo(callback){
                 logger.debug("getInfo");
                 dmManager.getData("user","BaseInfo",{uid:uid},function(ret,data){
-                    logger.debug("getInfo result",ret,data);
+                    logger.debug("getInfo result",ret);
                     if (ret>0) {
                     	callback(null, data);
                     } else {

@@ -37,7 +37,7 @@ logger.info("App Begin");
 //log4js.addAppender(log4js.appenders.file('logs/cheese.log'), 'cheese');
 
 // var logger = log4js.getLogger('cheese');
-logger.setLevel('INFO');
+logger.setLevel('ALL');
 // OFF nothing is logged
 // FATAL   fatal errors are logged
 // ERROR   errors are logged
@@ -87,7 +87,7 @@ if (config.mysql!=undefined) {
 
 /*prepare redis*/
 if (config.redis!=undefined) {
-    var redis = require("redis");
+    global.redis = require("redis");
     global.kvdb = redis.createClient();
     kvdb.allReady = false;
     // if you'd like to select database 3, instead of 0 (default), call

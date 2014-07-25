@@ -2,6 +2,13 @@ var DataModelManager = Class.extend({
 	init : function() {
 		this.dms = {};
 	},
+	setData : function(category,method,key,data,cb){
+		if (!F.isset(this.dms[category])) {
+			var DM = require('app/dataModels/'+category);
+			this.dms[category] = new DM();
+		}
+		this.dms[category]["set"+method](key,data,cb);
+	},
 	setDataChange : function(category,method,key,data,cb){
 		if (!F.isset(this.dms[category])) {
 			var DM = require('app/dataModels/'+category);

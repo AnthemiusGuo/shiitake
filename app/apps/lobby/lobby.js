@@ -1,4 +1,4 @@
-var BaseServer = require('framework/base/baseApp');
+var BaseServer = require('app/base/baseApp');
 var LobbyServer = BaseServer.extend({
 	init : function(typ,id,info) {
 		this._super(typ,id,info);
@@ -8,7 +8,7 @@ var LobbyServer = BaseServer.extend({
 		//用户密码并非这里校验, 使用web校验, 所以这里需要校验web生成的ticket
 		var uid = data.uid;
 		var ticket = data.ticket;
-
+        var self = this;
 		if (F.isset(this.userSocketManager.idClientMapping[uid])) {
 			this.userSocketManager.idClientMapping[uid].kickUser();
 		}
@@ -42,25 +42,22 @@ var LobbyServer = BaseServer.extend({
             function getInfo(callback){
                 logger.debug("getInfo");
                 dmManager.getData("user","BaseInfo",{uid:uid},function(ret,data){
-                    logger.debug("getInfo result",ret,data);
+                    logger.debug("getInfo result",ret);
                     if (ret>0) {
-                    	callback(null, data);
+                    	self.userSocketManager.idClientMapping[uid] = userSession;
+                        userSession.isLogined = true;
+                        userSession.id = uid;
+                        userSession.uid = uid;
+                        userSession.userInfo = data;
+                        userSession.onGetUserInfo();
+                        userSession.send("user","loginAck",1,packetId,data)
+                        //无需再callback了
+                        // callback(null, 'done');
                     } else {
                     	callback(-4,"no user info");
                     }
                 });
-            },
-            function sendBack(data, callback){
-                this.userSocketManager.idClientMapping[uid] = userSession;
-				userSession.isLogined = true;
-				userSession.id = uid;
-				userSession.uid = uid;
-				userSession.userInfo = data;
-				userSession.onGetUserInfo();
-				userSession.send("user","loginAck",1,packetId,data)
-				//无需再callback了
-                // callback(null, 'done');
-            }.bind(this)
+            }
         ], function doneAll (err, result) {
             if (err) {
                 logger.error("doneAll with err",err,result);
