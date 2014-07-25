@@ -134,7 +134,7 @@ var ClientRPC = require('framework/base/rpcClient');
 DmManager = require('framework/base/dataModelManager');
 global.dmManager = new DmManager();
 
-var LogicApp = require('app/apps/'+appTyp+'/'+appTyp);
+var LogicApp = require('app/apps/'+appTyp+'/app');
 global.logicApp = new LogicApp(appTyp,appId,config.servers[appTyp].serverList[appId]); 
 
 

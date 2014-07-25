@@ -99,7 +99,8 @@ if (PRODUCTION==="production") {
 	    // 	"rpcMode":"robot",
 	    // 	"rpcProtocol":"websocket",
 	    // 	"serverList" : {
-	    // 		"robot-server-1":{"id":"robot-server-1","host":"127.0.0.1","port":3031,"clientPort":3030,"frontend":false}
+	    	////for关键字
+	    // 		"robot-server-zha":{"id":"robot-server-zha","host":"127.0.0.1","port":3031,"clientPort":3030,"frontend":false,"for":zha}
 	    // 	}
 	    	
 	    // },
