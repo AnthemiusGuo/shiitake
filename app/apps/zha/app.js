@@ -74,8 +74,8 @@ var ZhaServer = GameServer.extend({
             
         });	
 	},
-	run : function() {
-		this._super();
+	prepare : function() {
+		//nothing to do 
 	},
 	onAllReady: function() {
 		this._super();

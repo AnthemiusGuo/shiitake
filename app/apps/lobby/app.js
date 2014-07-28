@@ -4,6 +4,9 @@ var LobbyServer = BaseServer.extend({
 		this._super(typ,id,info);
 		this.onlineUsers = {};
 	},
+    prepare : function() {
+        //nothing to do 
+    },
 	doLogin : function(data,userSession,packetId) {
 		//用户密码并非这里校验, 使用web校验, 所以这里需要校验web生成的ticket
 		var uid = data.uid;

@@ -94,16 +94,16 @@ if (PRODUCTION==="production") {
 	    // 	}
 	    	
 	    // },
-	    // "robot":{
-	    // 	"runTyp":"nodejs",
-	    // 	"rpcMode":"robot",
-	    // 	"rpcProtocol":"websocket",
-	    // 	"serverList" : {
-	    	////for关键字
-	    // 		"robot-server-zha":{"id":"robot-server-zha","host":"127.0.0.1","port":3031,"clientPort":3030,"frontend":false,"for":zha}
-	    // 	}
+	    "robot":{
+	    	"runTyp":"nodejs",
+	    	"rpcMode":"robot",
+	    	"rpcProtocol":"websocket",
+	    	"serverList" : {
+	    	//for关键字
+	    		"robot-server-zha":{"id":"robot-server-zha","host":"127.0.0.1","port":3031,"clientPort":3030,"frontend":false,"for":"zha"}
+	    	}
 	    	
-	    // },
+	    },
 	    // "samples":{
 	    // 	"runTyp":"rpc",//其他服务器上的应用, 不再runner管理,不关心是nodejs的还是c++的
 	    // 	"rpcMode":"game",

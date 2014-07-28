@@ -135,62 +135,14 @@ DmManager = require('framework/base/dataModelManager');
 global.dmManager = new DmManager();
 
 var LogicApp = require('app/apps/'+appTyp+'/app');
-global.logicApp = new LogicApp(appTyp,appId,config.servers[appTyp].serverList[appId]); 
+global.logicApp = new LogicApp(appTyp,appId,serversInfo); 
 
 
 console.log("init rpc calling...");
 var RPC = require('framework/base/rpcManager');
 global.rpc = new RPC(config.servers,appTyp);
 
+logicApp.prepare();
 logicApp.run();
 //e.g.
 //rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});
-
-
-
-//先放在这里,将来移到run函数
-if (serversInfo.frontend) {
-    //支持对用户接入,监听用户端口
-    global.frontServer = new WebSocketServer({port: serversInfo.clientPort});
-    frontServer.userClients = {};
-
-    frontServer.on('connection', function(socket) {
-        logger.debug('someone connected');
-
-        var clientSession = new ClientUser(socket);
-        if (logicApp.allReady==false) {
-            clientSession.kickUser("serverNotReady");
-            return;
-        }
-        logicApp.userSocketManager.onNewSocketConnect(clientSession,socket);
-        socket.on('message', function(message) {
-            logger.trace(message);
-            logicApp.onMsg("user",socket,message)
-        })
-        .on('close',function(code, message){
-            logger.debug("===closed user client");
-            logicApp.userSocketManager.onCloseSocketConnect(socket);
-            clientSession.onCloseSocket();
-            clientSession = null;
-        });
-    });
-}
-
-//对服务器RPC接口
-global.backServer = new WebSocketServer({port: serversInfo.port});
-backServer.rpcClients = {};
-
-backServer.on('connection', function(socket) {
-    logger.info('some server connected');
-    var clientSession = new ClientRPC(socket);
-    logicApp.rpcSocketManager.onNewSocketConnect(clientSession,socket);
-    socket.on('message', function(message) {
-        logicApp.onMsg("rpc",socket,message)
-    })
-    .on('close',function(code, message){
-        logger.info("===closed rpc client");
-        logicApp.rpcSocketManager.onCloseSocketConnect(socket);
-        clientSession.onCloseSocket();
-        clientSession = null;
-    });
-});

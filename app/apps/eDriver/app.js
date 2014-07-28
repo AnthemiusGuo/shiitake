@@ -9,6 +9,9 @@ var EDriver = BaseEDriver.extend({
 									2:{name:"xxxxx",typ:"local"},
 								},
 							"user":{}};
-	}
+	},
+	prepare : function() {
+		//nothing to do 
+	},
 });
 module.exports = EDriver;

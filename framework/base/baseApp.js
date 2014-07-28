@@ -10,8 +10,9 @@ var BaseApp = Class.extend({
 		this.rpcSocketManager = new BaseSocketManager(this,"rpc",this.typ);
 		this.allReady = false;
 		this.firstAllReady = false;
-		
-
+		//如果初始化时候需要自己先读取数据库等才允许其他人rpc调用, 则不启动RPC接口
+		this.serverInitReady = true;
+		this.serverSocketListenReady = false;
 		this.startTS = new Date().getTime();
 		this.readyTS = 0;
 		dmManager.setHashKeyValueKVDBGlobal("srvSta/"+this.typ,this.id,0);
@@ -23,10 +24,27 @@ var BaseApp = Class.extend({
 		this.errorInfo = msg;
 		logger.warn(this.id+"@"+this.typ+" : "+msg);
 	},
+	prepare : function() {
+		utils.PLEASE_OVERWRITE_ME();
+	},
 	run : function() {
+		//如果启动需要先读取数据库什么的, 就重写初始化时候把this.serverInitReady置为false,
+		//这样定时执行等好了再说
+		if (this.serverInitReady) {
+			this.openSocketServer();
+		}
 		this.checkReadyTick = setInterval(this.checkStatus.bind(this),3000);
 	},
 	checkStatus : function() {
+		if (this.serverInitReady && !this.serverSocketListenReady){
+			logger.info("checkStatus rpc not ready");
+			this.openSocketServer();
+		}
+		if (!this.serverInitReady) {
+			logger.info("init not ready now!!");
+			this.allReady = false;
+			return;
+		}
 		if (rpc.allReady===false) {
 			logger.info("checkStatus rpc not ready");
 			this.allReady = false;
@@ -123,6 +141,64 @@ var BaseApp = Class.extend({
 		var ts =  new Date().getTime();
 		userSession.lastPing = ts;
 		userSession.send("rpc","pong",1,packetId,{t:ts});
+	},
+	openRPCServer : function(){
+		//对服务器RPC接口
+		var serversInfo = this.info;
+		global.backServer = new WebSocketServer({port: serversInfo.port});
+		backServer.rpcClients = {};
+
+		backServer.on('connection', function(socket) {
+		    logger.info('some server connected');
+		    var clientSession = new ClientRPC(socket);
+		    logicApp.rpcSocketManager.onNewSocketConnect(clientSession,socket);
+		    socket.on('message', function(message) {
+		        logicApp.onMsg("rpc",socket,message)
+		    })
+		    .on('close',function(code, message){
+		        logger.info("===closed rpc client");
+		        logicApp.rpcSocketManager.onCloseSocketConnect(socket);
+		        clientSession.onCloseSocket();
+		        clientSession = null;
+		    });
+		});
+	},
+	openUserServer : function(){
+		var serversInfo = this.info;
+		//支持对用户接入,监听用户端口
+	    global.frontServer = new WebSocketServer({port: serversInfo.clientPort});
+	    frontServer.userClients = {};
+
+	    frontServer.on('connection', function(socket) {
+	        logger.debug('someone connected');
+
+	        var clientSession = new ClientUser(socket);
+	        if (logicApp.allReady==false) {
+	            clientSession.kickUser("serverNotReady");
+	            return;
+	        }
+	        logicApp.userSocketManager.onNewSocketConnect(clientSession,socket);
+	        socket.on('message', function(message) {
+	            logger.trace(message);
+	            logicApp.onMsg("user",socket,message)
+	        })
+	        .on('close',function(code, message){
+	            logger.debug("===closed user client");
+	            logicApp.userSocketManager.onCloseSocketConnect(socket);
+	            clientSession.onCloseSocket();
+	            clientSession = null;
+	        });
+	    });
+	},
+	openSocketServer : function(){
+		//不用管是否执行完, 只要执行过了就好了
+		this.serverSocketListenReady = true;
+		var serversInfo = this.info;
+		//先放在这里,将来移到run函数
+		if (this.info.frontend) {
+			this.openUserServer();
+		}
+		this.openRPCServer();
 	}
 });
 
