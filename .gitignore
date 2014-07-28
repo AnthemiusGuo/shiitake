@@ -2730,3 +2730,19 @@
 /node_modules/static-favicon/package.json
 
 node_modules/ws/build/gyp-mac-tool
+
+node_modules/log4js/lib/appenders/gelf.js
+
+node_modules/log4js/lib/appenders/gelf.js
+
+node_modules/log4js/lib/log4js.js
+
+node_modules/log4js/node_modules/readable-stream/package.json
+
+node_modules/log4js/package.json
+
+node_modules/log4js/README.md
+
+node_modules/log4js/test/gelfAppender-test.js
+
+node_modules/log4js/test/global-log-level-test.js

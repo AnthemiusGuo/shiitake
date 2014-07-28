@@ -36,3 +36,9 @@ note
 ----------
 
 * for match server and so on, one connection at once!!! because 
+
+e.g.
+----------
+* node app.js --typ=lobby --id=lobby-server-1 
+* node app.js --typ=zha --id=zha-srv-1-1
+* node app.js --typ=robot --id=robot-server-zha
