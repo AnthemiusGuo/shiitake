@@ -64,9 +64,6 @@ var Table = TablePublic.extend({
 	    this.online_rank_msg = [];
 	    this.update_online_rank_zeit = 0;
 
-	    this.robot_users = {};
-	    this.robot_zhuang_users = [];
-
 	    this.canBet = false;
 	    this.thisRoundFull = false;
 	    this.thisRoundLimit = 0;
@@ -811,6 +808,7 @@ var Table = TablePublic.extend({
 	},
 	arrange_user_list: function(){
 		//清理内存
+		
 		for (var k in this.userList) {
 			if (k == this.zhuang_uid) {
 				//庄下线继续当庄
@@ -833,6 +831,7 @@ var Table = TablePublic.extend({
 		};
 		this.userList = utils.clearUpHash(this.userList);
 		this.zhuang_queue = utils.clearUpArray(this.zhuang_queue);
+
 	},
 	checkIfXiaZhuang : function() {
 		if (!this.userZhuang){

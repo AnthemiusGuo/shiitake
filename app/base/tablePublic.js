@@ -54,6 +54,11 @@ var TablePublic = Table.extend({
 		logger.info("begin table loop!!");
 		this.onStateStart();
 	},
+	pause : function() {
+		logger.info("pause table loop!!");
+		this.state = "init";
+		clearTimeout(this.mainTimer);
+	},
 	onStateStart : function(){
 		this.matchId = new Date().getTime();
 		this.state = "Start";
