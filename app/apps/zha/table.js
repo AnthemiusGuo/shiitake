@@ -901,6 +901,9 @@ var Table = TablePublic.extend({
 		} else {
 			this.zhuang_user_info = {counter:0};
 		}
+	},
+	askRobotUser: function(count) {
+		rpc.call("robot","user","join",{forTyp:"zha"},{count:count});
 	}
 });
 

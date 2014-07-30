@@ -88,8 +88,12 @@ var WebSocketRPC = RpcServer.extend({
 				return this.allServers[id.serverId];
 			}
 		} else {
-
+			return this.findServerByParam(id);
 		}
+		return null;
+	},
+	findServerByParam: function(param){
+		utils.PLEASE_OVERWRITE_ME();
 		return null;
 	},
 	errorOnSend : function(ret,errorInfo,req){
