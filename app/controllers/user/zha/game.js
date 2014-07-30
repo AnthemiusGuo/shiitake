@@ -10,7 +10,6 @@ var TheGameCtrller = GameCtrller.extend({
 			userSession.sendErrPackFormat(packetSerId);
 			return;
 		}
-		
 		//进桌
 		var tableId = this.app.findTable(data.prefer);
 		logger.debug("find table ID:"+tableId);

@@ -44,7 +44,7 @@ var ZhaRobot = BaseRobot.extend({
 	onMsg_user_loginAck : function(data,ts,r,seqId){
 		if (r>0) {
 			this.call('game','joinTableReq',{prefer:this.tableId})
-			logger.info(data);
+			logger.info("on Msg user login succ!!",data);
 		} else {
 			this.close();
 			logger.info("on Msg user login fail!!",data,r);

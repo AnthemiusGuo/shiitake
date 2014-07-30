@@ -106,12 +106,12 @@ var Table = TablePublic.extend({
 
 		//機器人相關
 		if (this.roborCount<10) {
-			//少於10個就一次性要10個機器人，然後慢慢根據情況踢
-			this.askRobotUser(10);
+			//少於10個就一次性要10個機器人，然後慢慢根據情況踢,臨時請求2個
+			this.askRobotUser(2);
 		}
 		if (this.userZhuang && this.zhuang_uid==0){
 			//沒人坐莊，要個2個機器人排隊等着當莊
-			this.askRobotZhuang(2);
+			this.askRobotZhuang(1);
 		}
 	},
 	doWaitBet : function(){

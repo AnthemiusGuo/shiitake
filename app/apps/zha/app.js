@@ -62,6 +62,7 @@ var ZhaServer = GameServer.extend({
                 });
             },
             function sendBack(data, callback){
+
                 this.userSocketManager.idClientMapping[uid] = userSession;
 				userSession.isLogined = true;
 				userSession.id = uid;
@@ -69,7 +70,7 @@ var ZhaServer = GameServer.extend({
 				userSession.userInfo = data;
 				userSession.is_robot = (data.is_robot==1);
 				userSession.onGetUserInfo();
-				userSession.send("user","loginAck",1,packetId,{})
+				userSession.send("user","loginAck",1,packetId,{info:userSession.userInfo})
 				//无需再callback了
                 // callback(null, 'done');
             }.bind(this)
