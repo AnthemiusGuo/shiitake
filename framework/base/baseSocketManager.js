@@ -36,6 +36,9 @@ var BaseSocketManager = Class.extend({
 	},
 	
 	onCloseSocketConnect : function(socket) {
+		if (!F.isset(this.socketClientMapping[socket])) {
+			return;
+		}
 		if (this.socketClientMapping[socket].isLogined) {
 			var id = this.socketClientMapping[socket].id;
 			this.idClientMapping[id] = null;

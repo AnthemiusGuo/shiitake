@@ -145,11 +145,15 @@ Table.prototype.onGameMsg_betAck = function(category,method,data,ts,packetId,ret
 	if (ret<0) {
 
 	} else {
-		consoleLog("game","下注情况");
-		consoleLog("game",ConfigMen[0]+":"+data.my_bet_info[0]+"/"+data.total_bet_info[0]+";"+
-						ConfigMen[1]+":"+data.my_bet_info[1]+"/"+data.total_bet_info[1]+";"+
-						ConfigMen[2]+":"+data.my_bet_info[2]+"/"+data.total_bet_info[2]+";"+
-						ConfigMen[3]+":"+data.my_bet_info[3]+"/"+data.total_bet_info[3]);
+		$("#men1 .total").html(data.total_bet_info[0]);
+		$("#men2 .total").html(data.total_bet_info[1]);
+		$("#men3 .total").html(data.total_bet_info[2]);
+		$("#men4 .total").html(data.total_bet_info[3]);
+
+		$("#men1 .my").html(data.my_bet_info[0]);
+		$("#men2 .my").html(data.my_bet_info[1]);
+		$("#men3 .my").html(data.my_bet_info[2]);
+		$("#men4 .my").html(data.my_bet_info[3]);
 	}
 	
 	// sendGame('game','joinTable',{prefer:0})
@@ -179,46 +183,46 @@ Table.prototype.onGameMsg_OpenNot = function(category,method,data,ts,packetId,re
 		var ppp = PokerUtils.getPokerInfoBy54(data.r[0].p[k]);
 		str = str + " , "+ppp.hua+ppp.mian;
 	};
-	consoleLog("game","庄:"+str);
-	consoleLog("game","庄:"+ConfigTyp[data.r[0].t]);
+	$("#zhuang .pai").html(str);
+	$("#zhuang .px").html(ConfigTyp[data.r[0].t]);
 
 	str = "";
+	var configWL = ["负","胜"];
 	for (var k in data.r[1].p) {
 		var ppp = PokerUtils.getPokerInfoBy54(data.r[1].p[k]);
 		str = str + " , "+ppp.hua+ppp.mian;
 	};
-	consoleLog("game","天:"+str);
-	consoleLog("game","天:"+ConfigTyp[data.r[1].t]);
+	$("#men1 .pai").html(str);
+	$("#men1 .px").html(ConfigTyp[data.r[1].t]);
+	$("#men1 .wl").html(configWL[data.r[1].r]);
 
 	str = "";
 	for (var k in data.r[2].p) {
 		var ppp = PokerUtils.getPokerInfoBy54(data.r[2].p[k]);
 		str = str + " , "+ppp.hua+ppp.mian;
 	};
-	consoleLog("game","地:"+str);
-	consoleLog("game","地:"+ConfigTyp[data.r[2].t]);
+	$("#men2 .pai").html(str);
+	$("#men2 .px").html(ConfigTyp[data.r[2].t]);
+	$("#men2 .wl").html(configWL[data.r[2].r]);
 
 	str = "";
 	for (var k in data.r[3].p) {
 		var ppp = PokerUtils.getPokerInfoBy54(data.r[3].p[k]);
 		str = str + " , "+ppp.hua+ppp.mian;
 	};
-	consoleLog("game","玄:"+str);
-	consoleLog("game","玄:"+ConfigTyp[data.r[3].t]);
+	$("#men3 .pai").html(str);
+	$("#men3 .px").html(ConfigTyp[data.r[3].t]);
+	$("#men3 .wl").html(configWL[data.r[3].r]);
 
 	str = "";
 	for (var k in data.r[4].p) {
 		var ppp = PokerUtils.getPokerInfoBy54(data.r[4].p[k]);
 		str = str + " , "+ppp.hua+ppp.mian;
 	};
-	consoleLog("game","黄:"+str);
-	consoleLog("game","黄:"+ConfigTyp[data.r[4].t]);
+	$("#men4 .pai").html(str);
+	$("#men4 .px").html(ConfigTyp[data.r[4].t]);
+	$("#men4 .wl").html(configWL[data.r[4].r]);
 
-	var configWL = ["负","胜"];
-	consoleLog("game","天:"+configWL[data.r[1].r]+
-						"; 地:"+configWL[data.r[2].r]+
-						"; 玄:"+configWL[data.r[3].r]+
-						"; 黄:"+configWL[data.r[4].r]);
 
 	if (typeof(data.me!="undefined")){
 		consoleLog("game","我的下注");

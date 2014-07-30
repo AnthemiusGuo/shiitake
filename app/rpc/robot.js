@@ -8,7 +8,12 @@ var RobotRPC = RpcServer.extend({
 		}
 	},
 	findServerByParam: function(param){
-
+		if (F.isset(this.serverForTyps[param.forTyp])) {
+			var id = this.serverForTyps[param.forTyp];
+			return this.allServers[id];
+		} else {
+			return null;
+		}
 	}
 });
 module.exports = RobotRPC;

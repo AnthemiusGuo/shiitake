@@ -4,7 +4,7 @@ var ZhaClient = BaseClient.extend({
 		this._super(socket);
 		this.credits = 0;
 		//机器人也是一个普通用户链接
-		this.is_robot = 0;
+		this.is_robot = false;
 		this.reset();
 	},
 	login : function(uid) {

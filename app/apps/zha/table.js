@@ -57,7 +57,6 @@ var Table = TablePublic.extend({
 	    this.zhuang_name = '未设置';
 	    this.innings = 0;
 	    this.zhuang_uid = 0;
-	    this.zhuang_typ = 0;
 	    this.zhuang_user_info = {};
 	    this.zhuang_queue = [];
 
@@ -71,6 +70,9 @@ var Table = TablePublic.extend({
 	    this.bet_info_change = false;
 
 	    this.userZhuang = roomConfig.userZhuang;
+
+	    this.roborCount = 0;
+	    this.isRobotZhuang = 0;
 	},
 	doStart : function(){
 		this.canBet = false;
@@ -101,6 +103,16 @@ var Table = TablePublic.extend({
 			}
 		}
 		this.doBroadcast("table","StartNot",1,0,{cd:this.stateConfig[this.state].timer,zhuang_uid:this.zhuang_uid,zhuang_info:zhuang_showInfo});
+
+		//機器人相關
+		if (this.roborCount<10) {
+			//少於10個就一次性要10個機器人，然後慢慢根據情況踢
+			this.askRobotUser(10);
+		}
+		if (this.userZhuang && this.zhuang_uid==0){
+			//沒人坐莊，要個2個機器人排隊等着當莊
+			this.askRobotZhuang(2);
+		}
 	},
 	doWaitBet : function(){
 		//没啥要做，给用户广播下
@@ -564,7 +576,7 @@ var Table = TablePublic.extend({
 			if (F.isset(this.userList[this.zhuang_uid].userInfo)  && this.userList[this.zhuang_uid].isConnect) {
 				this_user = this.userList[this.zhuang_uid];
 	    		//已经有用户信息
-	    		if (this_user.is_robot!=1) {
+	    		if (this_user.is_robot) {
 		            player_win_credts += credits;
 		        }
 
@@ -618,7 +630,7 @@ var Table = TablePublic.extend({
 
 	    	if (F.isset(this.userList[uid].userInfo) && this.userList[uid].isConnect) {
 	    		//已经有用户信息
-	    		if (this_user.is_robot!=1) {
+	    		if (this_user.is_robot) {
 		            player_win_credts += credits;
 		        }
 
@@ -667,7 +679,7 @@ var Table = TablePublic.extend({
 
 	    if(this.zhuang_uid!=0) {
 	        var this_user = this.userList[this.zhuang_uid];
-	        if (this_user.is_robot!=1) {
+	        if (this_user.is_robot) {
 	            player_win_credts += zhuang_get;
 	        }
 	    }
@@ -775,6 +787,10 @@ var Table = TablePublic.extend({
 			var cd = Math.ceil((now -  this.stateTime)/1000);
 			userSession.send("table","OpenNot",1,0,{zhuang:this.zhuang_result_send,r:this.openResult,cd:this.stateConfig[this.state].timer-cd});
 		}
+
+		if (userSession.is_robot) {
+			this.roborCount++;
+		}
 	},
 	onAskZhuang : function(uid,data,packetSerId) {
 		var now = new Date().getTime();
@@ -815,7 +831,9 @@ var Table = TablePublic.extend({
 				continue;
 			}
 			if (!this.userList[k].isConnect) {
-				
+				if (this.userList[k].is_robot) {
+					this.roborCount--;
+				}
 				this.userList[k].closeSocket();
 				this.userList[k] = null;
 			}
@@ -845,7 +863,7 @@ var Table = TablePublic.extend({
 		this_user = this.userList[this.zhuang_uid];
 
 		//机器人坐庄
-		if (this_user.is_robot==1) {
+		if (this_user.is_robot) {
 			//检查有玩家报名庄不
             return 2;
         }
@@ -903,7 +921,10 @@ var Table = TablePublic.extend({
 		}
 	},
 	askRobotUser: function(count) {
-		rpc.call("robot","user","join",{forTyp:"zha"},{count:count});
+		rpc.call("robot","user","join",{forTyp:"zha"},{count:count,tableId:this.tableId,serverId:logicApp.id,ticket:logicApp.globalTicket});
+	},
+	askRobotZhuang : function(count) {
+		rpc.call("robot","user","joinAndAskZhuang",{forTyp:"zha"},{count:count,tableId:this.tableId,serverId:logicApp.id,ticket:logicApp.globalTicket});
 	}
 });
 

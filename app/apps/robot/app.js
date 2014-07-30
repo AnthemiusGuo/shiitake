@@ -16,6 +16,7 @@ var RobotServer = BaseServer.extend({
 			dir = 'app/apps/robot/baseRobot';
 			global.Robot = require(dir);
 		}
+        this.realServers = config.servers['zha'].serverList;
 	},
 	prepare : function() {
 		//它注册别人RPC和自己的机器人无关, 但是处理别人的RPC login时候,需要重载下, 必须自己服务器初始化完成了才允许其他rpc调用接入
@@ -51,7 +52,7 @@ var RobotServer = BaseServer.extend({
                 });
     		}, function(result){
     			if (result) {
-    				this.serverInitReady = true;	
+    				self.serverInitReady = true;	
     			} else {
     				logger.error("DB ERR FOR ROBOT!!!");
     				process.exit();
@@ -65,8 +66,42 @@ var RobotServer = BaseServer.extend({
     	this.robotPool.push(uid);
     	this.robotCount++;
 	},
+    reUseRobot : function(uid) {
+        this.robotPool.push(uid);
+    },
+    getARobot : function(){
+        //隊列前頭出
+        if (this.robotPool.length==0) {
+            return null;
+        }
+        var uid = this.robotPool.shift();
+        if (!F.isset(this.robotInfos[uid])){
+            return null;
+        }
+        return this.robotInfos[uid];
+    },
 	createNewRobots : function(count) {
 		//创建机器人, TODO
-	}
+	},
+    askRobotJoin : function(serverId,tableId,ticket,count) {
+        var serverInfo = this.realServers[serverId];
+
+        for (var i = 0; i < count; i++) {
+            var robot = this.getARobot();
+            robot.onTableTyp = "user";
+            robot.ticket = ticket;
+            robot.connectAndJoin(serverInfo,tableId);
+        };
+    },
+    askRobotZhuang : function(serverId,tableId,ticket,count) {
+        var serverInfo = this.realServers[serverId];
+        
+        for (var i = 0; i < count; i++) {
+            var robot = this.getARobot();
+            robot.onTableTyp = "zhuang";
+            robot.ticket = ticket;
+            robot.connectAndJoin(serverInfo,tableId);
+        };
+    }
 });
 module.exports = RobotServer;

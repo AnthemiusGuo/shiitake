@@ -16,6 +16,8 @@ var BaseApp = Class.extend({
 		this.startTS = new Date().getTime();
 		this.readyTS = 0;
 		dmManager.setHashKeyValueKVDBGlobal("srvSta/"+this.typ,this.id,0);
+		this.globalTicket = F.md5(this.startTS+"sKlaa"+this.id);
+		logger.info("this.globalTicket",this.globalTicket);
 	},
 	getErr : function(){
 		return this.errorInfo;
@@ -147,16 +149,17 @@ var BaseApp = Class.extend({
 		var serversInfo = this.info;
 		global.backServer = new WebSocketServer({port: serversInfo.port});
 		backServer.rpcClients = {};
-
+		var ClientRPC = require('framework/base/rpcClient');
 		backServer.on('connection', function(socket) {
 		    logger.info('some server connected');
+
 		    var clientSession = new ClientRPC(socket);
 		    logicApp.rpcSocketManager.onNewSocketConnect(clientSession,socket);
 		    socket.on('message', function(message) {
 		        logicApp.onMsg("rpc",socket,message)
 		    })
 		    .on('close',function(code, message){
-		        logger.info("===closed rpc client");
+		        console.trace("===closed rpc client");
 		        logicApp.rpcSocketManager.onCloseSocketConnect(socket);
 		        clientSession.onCloseSocket();
 		        clientSession = null;
@@ -167,6 +170,7 @@ var BaseApp = Class.extend({
 		var serversInfo = this.info;
 		//支持对用户接入,监听用户端口
 	    global.frontServer = new WebSocketServer({port: serversInfo.clientPort});
+	    var ClientUser = require('app/apps/'+appTyp+'/client');
 	    frontServer.userClients = {};
 
 	    frontServer.on('connection', function(socket) {
@@ -191,6 +195,7 @@ var BaseApp = Class.extend({
 	    });
 	},
 	openSocketServer : function(){
+		global.WebSocketServer = require('ws').Server;
 		//不用管是否执行完, 只要执行过了就好了
 		this.serverSocketListenReady = true;
 		var serversInfo = this.info;

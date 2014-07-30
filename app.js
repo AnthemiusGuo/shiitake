@@ -8,7 +8,7 @@ log4js.replaceConsole();
 global.logger = log4js.getLogger();
 
 global.rootDir = __dirname;
-var config = require('app/config/config')
+global.config = require('app/config/config')
 //refernce https://github.com/mranney/node_redis/
 //refernce https://github.com/felixge/node-mysql
 
@@ -123,13 +123,6 @@ if (config.redis!=undefined) {
 }
 
 var serversInfo = config.servers[appTyp].serverList[appId];
-
-var WebSocketServer = require('ws').Server;
-if (serversInfo.frontend) {
-    var ClientUser = require('app/apps/'+appTyp+'/client');
-}
-
-var ClientRPC = require('framework/base/rpcClient');
 
 DmManager = require('framework/base/dataModelManager');
 global.dmManager = new DmManager();

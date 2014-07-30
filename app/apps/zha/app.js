@@ -21,10 +21,16 @@ var ZhaServer = GameServer.extend({
 		if (F.isset(this.userSocketManager.idClientMapping[uid])) {
 			this.userSocketManager.idClientMapping[uid].kickUser();
 		}
-
+		var self = this;
 		async.waterfall([
             function verifyTicket(callback) {
                 logger.debug("verifyTicket");
+                //hack用超級ticket，這個給robot用的
+                logger.debug("globalTicket",this.globalTicket,ticket);
+                if (this.globalTicket == ticket) {
+                	callback(null);
+                	return;
+                }
                 var real_key = "user/ticket/"+uid;
                 kvdb.get(real_key,function(err, reply) {
                     logger.debug("verifyTicket result",reply);
@@ -33,7 +39,7 @@ var ZhaServer = GameServer.extend({
                         return;
                     }
                     if (reply===null) {
-                        callback(-1,"don't hit cache");
+                        callback(-1,"don't hit ticket cache");
                         return;
                     }
                     //hit cache!!!
@@ -43,7 +49,7 @@ var ZhaServer = GameServer.extend({
                     }
                     callback(null);
                 });
-            },
+            }.bind(this),
             function getInfo(callback){
                 logger.debug("getInfo");
                 dmManager.getData("user","BaseInfo",{uid:uid},function(ret,data){
@@ -61,6 +67,7 @@ var ZhaServer = GameServer.extend({
 				userSession.id = uid;
 				userSession.uid = uid;
 				userSession.userInfo = data;
+				userSession.is_robot = (data.is_robot==1);
 				userSession.onGetUserInfo();
 				userSession.send("user","loginAck",1,packetId,{})
 				//无需再callback了
