@@ -88,20 +88,37 @@ var RobotServer = BaseServer.extend({
 
         for (var i = 0; i < count; i++) {
             var robot = this.getARobot();
+            if (robot==null) {
+                continue;
+            }
+            this.robotInUseCount++;
             robot.onTableTyp = "user";
             robot.ticket = ticket;
             robot.connectAndJoin(serverInfo,tableId);
         };
+        this.checkRobotEnough();
     },
     askRobotZhuang : function(serverId,tableId,ticket,count) {
         var serverInfo = this.realServers[serverId];
         
         for (var i = 0; i < count; i++) {
             var robot = this.getARobot();
+            if (robot==null) {
+                continue;
+            }
+            this.robotInUseCount++;
             robot.onTableTyp = "zhuang";
             robot.ticket = ticket;
             robot.connectAndJoin(serverInfo,tableId);
         };
+        this.checkRobotEnough();
+    },
+    checkRobotEnough : function() {
+        if (this.robotInUseCount>=this.robotCount*0.8) {
+            //用掉80%就要注册新的机器人了
+            this.createNewRobots(Math.round(this.robotInUseCount - this.robotCount*0.8+10)); 
+        }
     }
+
 });
 module.exports = RobotServer;

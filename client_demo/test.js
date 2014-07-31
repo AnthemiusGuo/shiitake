@@ -140,6 +140,18 @@ Table.prototype.onGameMsg_StartNot = function(category,method,data,ts,packetId,r
 	consoleLog("game","开始洗牌/摇骰子");
 	// sendGame('game','joinTable',{prefer:0})
 }
+
+Table.prototype.onGameMsg_InBetNot = function(category,method,data,ts,packetId,ret) {
+	if (ret<0) {
+
+	} else {
+		$("#men1 .total").html(data.total_bet_info[0]);
+		$("#men2 .total").html(data.total_bet_info[1]);
+		$("#men3 .total").html(data.total_bet_info[2]);
+		$("#men4 .total").html(data.total_bet_info[3]);
+	}
+}
+
 Table.prototype.onGameMsg_betAck = function(category,method,data,ts,packetId,ret) {
 	// {"c":"table","m":"betAck","d":{"total_bet_info":[0,0,2114,0],"my_bet_info":[0,0,2114,0]},"t":1405327264434,"s":3,"r":1}
 	if (ret<0) {
@@ -224,7 +236,7 @@ Table.prototype.onGameMsg_OpenNot = function(category,method,data,ts,packetId,re
 	$("#men4 .wl").html(configWL[data.r[4].r]);
 
 
-	if (typeof(data.me!="undefined")){
+	if (typeof(data.me)!="undefined"){
 		consoleLog("game","我的下注");
 		consoleLog("game","天:"+data.me.cc[0]+
 						"; 地:"+data.me.cc[1]+

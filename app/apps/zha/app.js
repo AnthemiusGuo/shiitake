@@ -70,7 +70,7 @@ var ZhaServer = GameServer.extend({
 				userSession.userInfo = data;
 				userSession.is_robot = (data.is_robot==1);
 				userSession.onGetUserInfo();
-				userSession.send("user","loginAck",1,packetId,{info:userSession.userInfo})
+				userSession.send("user","loginAck",1,packetId,{})
 				//无需再callback了
                 // callback(null, 'done');
             }.bind(this)

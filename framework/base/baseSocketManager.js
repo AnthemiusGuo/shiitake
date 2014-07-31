@@ -31,19 +31,20 @@ var BaseSocketManager = Class.extend({
 		return 1;
 	},
 	onNewSocketConnect : function(user,socket) {
-		this.socketClientMapping[socket] = user;
+
+		this.socketClientMapping[socket.socket_id] = user;
 		this.connectCount++;
 	},
 	
 	onCloseSocketConnect : function(socket) {
-		if (!F.isset(this.socketClientMapping[socket])) {
+		if (!F.isset(this.socketClientMapping[socket.socket_id])) {
 			return;
 		}
-		if (this.socketClientMapping[socket].isLogined) {
-			var id = this.socketClientMapping[socket].id;
+		if (this.socketClientMapping[socket.socket_id].isLogined) {
+			var id = this.socketClientMapping[socket.socket_id].id;
 			this.idClientMapping[id] = null;
 		}
-		this.socketClientMapping[socket] = null;
+		this.socketClientMapping[socket.socket_id] = null;
 		this.connectCount--;
 	},
 

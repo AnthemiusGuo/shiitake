@@ -65,6 +65,7 @@ var WebSocketRPC = RpcServer.extend({
 			}).on('close',function(){
 				self.allServers[k].connected = false;
 				self.allServers[k].ready = false;
+				
 			}).on('error',function(err){
 				self.allServers[k].connected = false;
 				self.allServers[k].ready = false;

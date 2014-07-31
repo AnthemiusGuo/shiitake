@@ -73,6 +73,8 @@ var Table = TablePublic.extend({
 
 	    this.roborCount = 0;
 	    this.isRobotZhuang = 0;
+
+	    this.userCounter = 0;
 	},
 	doStart : function(){
 		this.canBet = false;
@@ -106,6 +108,7 @@ var Table = TablePublic.extend({
 
 		//機器人相關
 		if (this.roborCount<10) {
+			logger.info("this.roborCount :",this.roborCount);
 			//少於10個就一次性要10個機器人，然後慢慢根據情況踢,臨時請求2個
 			this.askRobotUser(2);
 		}
@@ -765,6 +768,27 @@ var Table = TablePublic.extend({
 	},
 	onJoinTable : function(userSession) {
 		logger.debug("user "+userSession.uid+" join the table");
+
+
+		// 'room_limit_low' :1000,
+		// 	    'room_limit_kick' :1000,
+		// 	    'room_limit_high' :2000000,
+		// 	    "maxUserPerTable":100,
+		// 		'room_zhuang_limit_low' :100000,
+		// 	    'room_zhuang_limit_high' :43990000,
+
+		if (false) { //userSession.userInfo.credits < this.roomConfig.room_limit_low) {
+			userSession.send("game","joinTableAck",-1,0,{e:'您的游戏币不足',room_limit_low:this.roomConfig.room_limit_low});
+			userSession.closeSocket();
+			userSession = null;
+			return;
+		}
+		if (false) { //userSession.userInfo.credits > this.roomConfig.room_limit_high) {
+			userSession.send("game","joinTableAck",-1,0,{e:'您的游戏币过高',room_limit_high:this.roomConfig.room_limit_high});
+			userSession.closeSocket();
+			userSession = null;
+			return;
+		}
 		this.userList[userSession.uid] = userSession;
 		this.userCounter = Object.keys(this.userList).length;
 
@@ -775,6 +799,9 @@ var Table = TablePublic.extend({
 		//game","m":"joinTable","d":{"prefer":0},"t":1404574299209,"s":1,"r":1}
 		var allUsersInfo = {};
 		for (var k in this.userList) {
+			if (this.userList[k]==null) {
+				continue;
+			}
 			allUsersInfo[this.userList[k].uid] = this.userList[k].getUserShowInfo();
 		}
 		userSession.send("game","joinTableAck",1,0,{tableId:this.tableId,usersIn:allUsersInfo,userZhuang:this.userZhuang});
@@ -805,6 +832,16 @@ var Table = TablePublic.extend({
 			userSession.sendAckErr("table","askZhuangAck",-100,"这个房间不允许用户坐庄",packetSerId);
 			return;
 		}
+		var credits = userSession.userInfo.credits;
+		if (credits < room_zhuang_limit_low) {
+			userSession.sendAckErr("table","askZhuangAck",-102,"您的游戏币不足",packetSerId);
+			return;
+		}
+		if (credits > room_zhuang_limit_high) {
+			userSession.sendAckErr("table","askZhuangAck",-103,"您的游戏币过高",packetSerId);
+			return;
+		}
+
 		for (var i = 0; i < this.zhuang_queue.length; i++) {
 			if (this.zhuang_queue[i].uid==uid){
 				userSession.sendAckErr("table","askZhuangAck",-101,"您已经报名成功",packetSerId);
@@ -826,6 +863,9 @@ var Table = TablePublic.extend({
 		//清理内存
 		
 		for (var k in this.userList) {
+			if (this.userList[k]==null) {
+				continue;
+			}
 			if (k == this.zhuang_uid) {
 				//庄下线继续当庄
 				continue;

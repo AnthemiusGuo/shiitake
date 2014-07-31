@@ -17,7 +17,11 @@ var Table = Class.extend({
 		
 	},
 	doBroadcast : function(category,method,ret,packetId,data) {
+		logger.debug("doBroadcast",category,method);
 		for (var k in this.userList) {
+			if (this.userList[k]==null) {
+				continue;
+			}
 			if (this.userList[k].isConnect) {
 				this.userList[k].send(category,method,ret,packetId,data);
 			}

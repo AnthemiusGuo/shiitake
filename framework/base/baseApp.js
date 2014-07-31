@@ -47,12 +47,7 @@ var BaseApp = Class.extend({
 			this.allReady = false;
 			return;
 		}
-		if (rpc.allReady===false) {
-			logger.info("checkStatus rpc not ready");
-			this.allReady = false;
-			rpc.checkRPCReady();
-			return;
-		} 
+		
 		if (db.allReady===false) {
 			logger.info("checkStatus db not ready");
 			this.allReady = false;
@@ -61,6 +56,12 @@ var BaseApp = Class.extend({
 		if (kvdb.allReady===false) {
 			logger.info("checkStatus kvdb not ready");
 			this.allReady = false;
+			return;
+		} 
+		if (rpc.allReady===false) {
+			logger.info("checkStatus rpc not ready");
+			this.allReady = false;
+			rpc.checkRPCReady();
 			return;
 		} 
 
@@ -79,6 +80,11 @@ var BaseApp = Class.extend({
 		dmManager.setHashKeyValueKVDBGlobal("srvRun/"+this.id,"readyTS",this.readyTS);
 		dmManager.setHashKeyValueKVDBGlobal("srvRun/"+this.id,"startTS",this.startTS);
 
+	},
+	onPause : function(reason) {
+		//故障暂停，
+		this.allReady = false;
+		dmManager.setHashKeyValueKVDBGlobal("srvSta/"+this.typ,this.id,2);
 	},
 	onMsg : function(rpcOrClient,socket,msg) {
 		var package = JSON.parse(msg);
@@ -108,11 +114,12 @@ var BaseApp = Class.extend({
 			this.sendToClientErrBySocket(socket,-9997,"信令不存在",packetSerId);
 			return;
 		}
-		if (!F.isset(sockManager.socketClientMapping[socket])) {
+		if (!F.isset(sockManager.socketClientMapping[socket.socket_id])) {
 			this.sendToClientErrBySocket(socket,-9996,"Session丢失",packetSerId);
 			return;
 		}
-		var userSession = sockManager.socketClientMapping[socket];
+
+		var userSession = sockManager.socketClientMapping[socket.socket_id];
 
 		sockManager.packageRouter[category][method](userSession,ret,ts,data,packetSerId);
 	},
@@ -149,9 +156,13 @@ var BaseApp = Class.extend({
 		var serversInfo = this.info;
 		global.backServer = new WebSocketServer({port: serversInfo.port});
 		backServer.rpcClients = {};
+		this._rpc_sock_id = 0;
 		var ClientRPC = require('framework/base/rpcClient');
 		backServer.on('connection', function(socket) {
 		    logger.info('some server connected');
+		    this._rpc_sock_id ++;
+	        var ts = new Date().getTime();
+	        socket.socket_id = F.md5(this._rpc_sock_id+"es"+ts);
 
 		    var clientSession = new ClientRPC(socket);
 		    logicApp.rpcSocketManager.onNewSocketConnect(clientSession,socket);
@@ -159,8 +170,8 @@ var BaseApp = Class.extend({
 		        logicApp.onMsg("rpc",socket,message)
 		    })
 		    .on('close',function(code, message){
-		        console.trace("===closed rpc client");
-		        logicApp.rpcSocketManager.onCloseSocketConnect(socket);
+		        logger.info("===closed rpc client");
+		        logicApp.rpcSocketManager.onCloseSocketConnect(socket);		        
 		        clientSession.onCloseSocket();
 		        clientSession = null;
 		    });
@@ -172,10 +183,12 @@ var BaseApp = Class.extend({
 	    global.frontServer = new WebSocketServer({port: serversInfo.clientPort});
 	    var ClientUser = require('app/apps/'+appTyp+'/client');
 	    frontServer.userClients = {};
-
+	    this._user_sock_id = 0;
 	    frontServer.on('connection', function(socket) {
 	        logger.debug('someone connected');
-
+	        this._user_sock_id ++;
+	        var ts = new Date().getTime();
+	        socket.socket_id = F.md5(this._user_sock_id+"sd"+ts);
 	        var clientSession = new ClientUser(socket);
 	        if (logicApp.allReady==false) {
 	            clientSession.kickUser("serverNotReady");
