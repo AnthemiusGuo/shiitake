@@ -65,7 +65,13 @@ var WebSocketRPC = RpcServer.extend({
 			}).on('close',function(){
 				self.allServers[k].connected = false;
 				self.allServers[k].ready = false;
-				
+				//重启自动链接
+				self.connect();
+				//然后
+				rpc.checkRPCReady();
+				if (rpc.allReady==false && self.rpcMustConnect) {
+					logicApp.onPause();	
+				}
 			}).on('error',function(err){
 				self.allServers[k].connected = false;
 				self.allServers[k].ready = false;

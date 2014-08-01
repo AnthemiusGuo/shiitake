@@ -650,6 +650,9 @@ var Table = TablePublic.extend({
 				me_result_send['get_exp'] = exp;
 				me_result_send['cc'] = user_result[uid]['cc'];
 				me_result_send['r'] = this_user.userInfo['credits'];
+				if (this.userList[uid]==null) {
+		    		continue;
+		    	}
 				this.userList[uid].send("table","OpenNot",1,0,{zhuang:zhuang_result_send,me:me_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
 	    	}
 	    	//用户加经验,钱
@@ -672,6 +675,9 @@ var Table = TablePublic.extend({
 	    		continue;
 	    	}
 	    	if (uid==this.zhuang_uid) {
+	    		continue;
+	    	}
+	    	if (this.userList[uid]==null) {
 	    		continue;
 	    	}
 	    	this.userList[uid].send("table","OpenNot",1,0,{zhuang:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
@@ -833,11 +839,11 @@ var Table = TablePublic.extend({
 			return;
 		}
 		var credits = userSession.userInfo.credits;
-		if (credits < room_zhuang_limit_low) {
+		if (credits < this.roomConfig.room_zhuang_limit_low) {
 			userSession.sendAckErr("table","askZhuangAck",-102,"您的游戏币不足",packetSerId);
 			return;
 		}
-		if (credits > room_zhuang_limit_high) {
+		if (credits > this.roomConfig.room_zhuang_limit_high) {
 			userSession.sendAckErr("table","askZhuangAck",-103,"您的游戏币过高",packetSerId);
 			return;
 		}
@@ -889,7 +895,6 @@ var Table = TablePublic.extend({
 		};
 		this.userList = utils.clearUpHash(this.userList);
 		this.zhuang_queue = utils.clearUpArray(this.zhuang_queue);
-
 	},
 	checkIfXiaZhuang : function() {
 		if (!this.userZhuang){

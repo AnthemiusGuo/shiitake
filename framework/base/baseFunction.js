@@ -72,6 +72,9 @@ var clearUpArray = function(arr) {
 var clearUpHash = function(hash) { 
   var target = {};
   for(var k in hash){ 
+    if (hash[k]==null){
+      continue;
+    }
     //不做深度整理
     // if (typeof(hash[k]=="Object")) {
     //   target[k] = clearUpHash(hash[k]);

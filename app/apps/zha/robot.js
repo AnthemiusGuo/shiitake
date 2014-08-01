@@ -39,7 +39,7 @@ var ZhaRobot = BaseRobot.extend({
 
 	},
 	onMsg : function(category,method,data,ts,r,seqId){
-		logger.info(data);
+		logger.info(category,method,data);
 	},
 	onMsg_user_loginAck : function(data,ts,r,seqId){
 		if (r>0) {
@@ -51,10 +51,10 @@ var ZhaRobot = BaseRobot.extend({
 		}
 		
 	},
-	onMsg_user_joinTableAck : function(data,ts,r,seqId){
+	onMsg_game_joinTableAck : function(data,ts,r,seqId){
 		if (this.onTableTyp=="zhuang") {
 			//莊的話，發個要求上莊排隊
-			this.call('game','askZhuangReq',{})
+			this.call('table','askZhuangReq',{})
 		} else {
 			//等着壓注信令
 
@@ -71,6 +71,14 @@ var ZhaRobot = BaseRobot.extend({
 		this.doBet(data.cd);
 		
 		logger.info(data);
+	},
+	onMsg_table_OpenNot : function(data,ts,r,seqId){
+		if (!F.isset(data.me)){
+			//和我这个机器人无关
+			return;
+		}
+		this.userInfo.credits = data.me.r;
+
 	},
 	doBet : function(cd){
 		this._changeCanUseChip();

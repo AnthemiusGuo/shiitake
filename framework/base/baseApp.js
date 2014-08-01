@@ -85,6 +85,7 @@ var BaseApp = Class.extend({
 		//故障暂停，
 		this.allReady = false;
 		dmManager.setHashKeyValueKVDBGlobal("srvSta/"+this.typ,this.id,2);
+		this.checkReadyTick = setInterval(this.checkStatus.bind(this),3000);
 	},
 	onMsg : function(rpcOrClient,socket,msg) {
 		var package = JSON.parse(msg);
