@@ -8,6 +8,7 @@ var ZhaRobot = BaseRobot.extend({
 		this.onTableTyps = ["user","zhuang"];
 		this.tableId = 0;
 		this.onBet = false;
+		this.betCounter = 0;
 	},
 	initCredits : function(){
 
@@ -43,6 +44,7 @@ var ZhaRobot = BaseRobot.extend({
 	},
 	onMsg_user_loginAck : function(data,ts,r,seqId){
 		if (r>0) {
+			this.betCounter = 0;
 			this.call('game','joinTableReq',{prefer:this.tableId})
 			logger.info("on Msg user login succ!!",data);
 		} else {
@@ -61,6 +63,16 @@ var ZhaRobot = BaseRobot.extend({
 		}
 		
 		logger.info(data);
+	},
+	onMsg_table_StartNot : function(data,ts,r,seqId){
+		if (this.betCounter > F.rand(3,7)) {
+			//离开
+			logger.info("Robot will leave now!!! as ",this.uid);
+			this.close();
+		}
+	},
+	onMsg_table_WaitOpenNot : function(data,ts,r,seqId){
+		this.onBet = false;
 	},
 	onMsg_table_WaitBetNot : function(data,ts,r,seqId){
 		this.onBet = true;
@@ -84,6 +96,10 @@ var ZhaRobot = BaseRobot.extend({
 		this._changeCanUseChip();
 		//押幾次，可以0次
 		var betCount = F.rand(0,3);
+		if (betCount==0) {
+			return;
+		}
+		this.betCounter++;
 		//進這一門押，否則數學期望押多門，總是輸的可能性大
 		var men = F.rand(1,4);
 

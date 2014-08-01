@@ -14,6 +14,10 @@ var ZhaServer = GameServer.extend({
 		this.tableId = this.tableIdBegin;
 
 		this.maxUserPerTable = this.roomConfig.maxUserPerTable;
+
+		var Analyser =  require('app/apps/zha/analyser');
+		this.analyser = new Analyser();
+
 	},
 	doLogin : function(data,userSession,packetId) {
 		var uid = data.uid;
@@ -128,6 +132,7 @@ var ZhaServer = GameServer.extend({
 		var Table = require('app/apps/zha/table');
 		this.tables[tableId] = new Table(tableId,this.roomConfig);
 		this.tables[tableId].run();
+		this.analyser.initTable(tableId);
 		return tableId;
 	},
 	deleteTable : function(tableId) {

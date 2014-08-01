@@ -116,6 +116,7 @@ var Table = TablePublic.extend({
 			//沒人坐莊，要個2個機器人排隊等着當莊
 			this.askRobotZhuang(1);
 		}
+		logicApp.analyser.add(this.tableId,{rounds:1});
 	},
 	doWaitBet : function(){
 		//没啥要做，给用户广播下
@@ -507,6 +508,14 @@ var Table = TablePublic.extend({
 	    this.uidChanged = {};
 	    logger.debug("this.user_bet_info:",this.user_bet_info);
 
+	    var analyser = {
+	    	allUserBets : 0,
+			sysWin : 0,
+			water : 0,
+			robotWin : 0,
+			zhuangWin : 0
+		};
+
 	    //不管用户在线不,先计算输赢
 	    for (var uid in this.user_bet_info){
 	    	var bets = this.user_bet_info[uid];
@@ -519,6 +528,7 @@ var Table = TablePublic.extend({
 	        }
 	        for (var men in bets) {
 	        	var point = bets[men];
+	        	analyser.allUserBets += point;
 
 	            var result = this['xian'+men].result;
 	            
@@ -537,6 +547,7 @@ var Table = TablePublic.extend({
 	                //闲家胜
 	                ratio = config_zha_ratio[this['xian'+men].poker_typ.typ];
 	                change_credits = Math.round(point*ratio);
+
 	                //change_credits = round(point*ratio*(1-room_water_ratio));
 	                zhuang_get -= change_credits;
 	                zhuang_result[men-1] -= change_credits;
@@ -560,12 +571,18 @@ var Table = TablePublic.extend({
 
 		if (zhuang_get>0) {
 			zhuang_credits = Math.round(zhuang_get*(1-room_water_ratio));
-
+			
 			//系统坐庄不计经验
 			if (this.zhuang_uid!=0) {
 				zhuang_exp = Math.round(zhuang_get*room_water_ratio);
 			}
 		} 
+
+		analyser.zhuangWin += zhuang_get;
+		if (this.zhuang_uid==0) {
+			//系统坐庄，钱输赢都是系统的，统计系统输赢
+			analyser.sysWin += zhuang_get;
+		}
 
 		var zhuang_result_send = {};
 		zhuang_result_send['c'] = zhuang_credits;
@@ -692,14 +709,8 @@ var Table = TablePublic.extend({
 	            player_win_credts += zhuang_get;
 	        }
 	    }
-		
-	    if(player_win_credts<0){
-	        player_win_credts = 0 - player_win_credts;
-	        logicApp.st_ser_change("sys_win",player_win_credts);
-	    }else{
-	        logicApp.st_ser_change("sys_lost",player_win_credts);
-	    }
-		
+		logicApp.analyser.add(this.tableId,analyser);
+	    		
 	    logger.debug(user_result);
 	    
 
