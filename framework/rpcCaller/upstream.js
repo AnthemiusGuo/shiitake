@@ -1,5 +1,5 @@
-var RpcServer = require('framework/rpc/rpcServer');
-var LobbyRPC = RpcServer.extend({
+var RpcCaller = require('framework/rpcCaller/rpcCaller');
+var HTTPRPC = RpcCaller.extend({
 	init : function (typ,serverConfigs){
 		this._super(typ,serverConfigs);
 		this.allServers = serverConfigs.serverList;	
@@ -24,7 +24,7 @@ var LobbyRPC = RpcServer.extend({
 		//依次执行各个categaory的注册, 使用配置的id作为请求的名字来自动路由到不同服务器
 		for (var k in this.allServers) {
 			this.allServers[k].ready = false;
-			this.runCommand(k,"rpc_login",{},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
+			this.callCommand(k,"rpc_login",{},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
 		}		
 	},
 	
@@ -40,8 +40,8 @@ var LobbyRPC = RpcServer.extend({
 		}
 	},
 
-	runCommand : function(category,method,id,params,cb){
-		logger.debug("websocket","runCommand",category,method,id,params);
+	callCommand : function(category,method,id,params,cb){
+		logger.debug("websocket","callCommand",category,method,id,params);
 
 		this.requestId++;
 		var reqId = this.requestId;
@@ -158,10 +158,11 @@ var LobbyRPC = RpcServer.extend({
 		req.end();
 	},
 	ping : function(){
+		var balance = logicApp.genLoadBalance();
 		//依次执行各个categaory的ping, 使用配置的id作为请求的名字来自动路由到不同服务器
 		for (var k in this.allServers) {
 			this.allServers[k].ready = false;
-			this.runCommand(k,"ping",{},{typ:logicApp.typ,id:logicApp.id},this.onPong.bind(this));
+			this.callCommand(k,"ping",{},{typ:logicApp.typ,id:logicApp.id,balance:balance},this.onPong.bind(this));
 		}
 	},
 	onMsgAck: function(ret,data,req) {
@@ -188,4 +189,4 @@ var LobbyRPC = RpcServer.extend({
 	}
 
 });
-module.exports = LobbyRPC;
+module.exports = HTTPRPC;

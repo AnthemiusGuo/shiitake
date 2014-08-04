@@ -1,5 +1,5 @@
-var RpcServer = require('framework/rpc/websocket');
-var RobotRPC = RpcServer.extend({
+var RpcCaller = require('framework/rpcCaller/websocket');
+var RobotRPC = RpcCaller.extend({
 	init : function (typ,serverConfigs){
 		this._super(typ,serverConfigs);
 		this.serverForTyps = {};

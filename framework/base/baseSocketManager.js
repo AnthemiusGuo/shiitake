@@ -10,29 +10,18 @@ var BaseSocketManager = Class.extend({
 		
 		this.connectCount = 0;
 		this.loginedCount = 0;
-	},
-	initPackageRouter: function(category){
-		if (!F.isset(this.packageRouter[category])) {
-			var dir = 'app/controllers/'+this.rpcOrClient+'/'+this.typ+'/'+category;
-			if (utils.lookup(rootDir,dir)) {
-				var Category = require(dir);				
-			} else {
-				dir = 'app/controllers/'+this.rpcOrClient+'/base/'+category;
-				if (utils.lookup(rootDir,dir)) {
-					var Category = require(dir);				
-				} else {
-					return -9998;
-					
-				}
-			}
-			logger.info("final dir:"+dir);
-			this.packageRouter[category] = new Category(this.app);
-		}
-		return 1;
-	},
-	onNewSocketConnect : function(user,socket) {
 
-		this.socketClientMapping[socket.socket_id] = user;
+		this.initPackageRouter();
+	},
+	initPackageRouter: function(){
+		logger.info("app/apps/"+this.typ+"/"+this.rpcOrClient+"Router");
+		var PackageRouter = require("app/apps/"+this.typ+"/"+this.rpcOrClient+"Router");
+		logger.info(PackageRouter);
+		this.packageRouter = new PackageRouter(this.typ,this.app);
+	},
+	onNewSocketConnect : function(clientSession,socket) {
+
+		this.socketClientMapping[socket.socket_id] = clientSession;
 		this.connectCount++;
 	},
 	
@@ -47,6 +36,16 @@ var BaseSocketManager = Class.extend({
 		this.socketClientMapping[socket.socket_id] = null;
 		this.connectCount--;
 	},
+	onRecv: function(clientSession,message) {
+		var package = JSON.parse(message);
+		if (!F.isset(package.c) || !F.isset(package.m) || !F.isset(package.d) || !F.isset(package.t) || !F.isset(package.s) || !F.isset(package.r)) {
+			var packetSerId = package.s;
+			clientSession.sendErr(-9999,"信令格式有误",packetSerId);
+			return;
+		}
+
+		this.packageRouter.onRecv(clientSession,package);
+	}
 
 });
 

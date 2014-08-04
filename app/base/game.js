@@ -8,9 +8,21 @@ var GameServer = BaseServer.extend({
 		//rpc call lobby that user is in here, don't let him go anywhere else
 		//or use redis????
 	},
-	st_ser_change : function(money) {
-		//记录输赢
-	}
+	onAllReady: function() {
+		this._super();
+		//通知大厅我好了
+		rpc.typBroadcastCall("lobby","rpc","serverReady",{typ:this.typ,id:this.id});
+	},
+	onReReady: function() {
+		this._super();
+		//通知大厅我好了
+		rpc.typBroadcastCall("lobby","rpc","serverReady",{typ:this.typ,id:this.id});
+	},
+	onPause : function(reason) {
+		this._super(reason);
+		//通知大厅我挂了
+		rpc.typBroadcastCall("lobby","rpc","serverPause",{typ:this.typ,id:this.id,reason:reason});
+	},
 	
 });
 module.exports = GameServer;

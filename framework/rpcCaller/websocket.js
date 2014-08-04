@@ -1,5 +1,5 @@
-var RpcServer = require('framework/rpc/rpcServer');
-var WebSocketRPC = RpcServer.extend({
+var RpcCaller = require('framework/rpcCaller/rpcCaller');
+var WebSocketRPC = RpcCaller.extend({
 	init : function (typ,serverConfigs){
 		this._super(typ,serverConfigs);
 		this.allServers = serverConfigs.serverList;	
@@ -22,9 +22,9 @@ var WebSocketRPC = RpcServer.extend({
 			if (this.allServers[k].connected == false) {
 				this.doConnect(k);
 			} else {
-				this.runCommand("rpc","login",{serverId:this.allServers[k].id},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
+				this.callCommand("rpc","login",{serverId:this.allServers[k].id},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
 			}
-			// this.runCommand(k,"rpc_login",{},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
+			// this.callCommand(k,"rpc_login",{},{typ:logicApp.typ,id:logicApp.id},this.onLoginAck.bind(this));
 		}
 		if (someOneNotReady==false) {
 			clearInterval(this.connectTick);
@@ -47,7 +47,7 @@ var WebSocketRPC = RpcServer.extend({
 			thisServer.socket.on('open', function() {
 				logger.info("websocket server "+self.typ+"/"+thisServer.id+" connect!!!");
 				self.allServers[k].connected = true;
-				self.runCommand("rpc","login",{serverId:thisServer.id},{typ:logicApp.typ,id:logicApp.id,serverId:thisServer.id},self.onLoginAck.bind(self));
+				self.callCommand("rpc","login",{serverId:thisServer.id},{typ:logicApp.typ,id:logicApp.id,serverId:thisServer.id},self.onLoginAck.bind(self));
 			    
 			}).on('message', function(data, flags) {
 				logger.trace(data);
@@ -65,6 +65,7 @@ var WebSocketRPC = RpcServer.extend({
 			}).on('close',function(){
 				self.allServers[k].connected = false;
 				self.allServers[k].ready = false;
+				rpc.rpcCallers[self.typ].allReady = false;
 				//重启自动链接
 				self.connect();
 				//然后
@@ -106,8 +107,8 @@ var WebSocketRPC = RpcServer.extend({
 	errorOnSend : function(ret,errorInfo,req){
 		logger.error(ret,errorInfo,req);
 	},
-	runCommand : function(category,method,id,data,cb){
-		logger.info("websocket","runCommand",category,method,id,data);
+	callCommand : function(category,method,id,data,cb){
+		logger.info("websocket","callCommand",category,method,id,data);
 		this.requestId++;
 		var reqId = this.requestId;
 		var req = {reqId:reqId,category:category,method:method,id:id,params:data,cb:cb};
@@ -174,9 +175,10 @@ var WebSocketRPC = RpcServer.extend({
 
 	
 	ping : function(){
+		var balance = logicApp.genLoadBalance();
 		//依次执行各个categaory的ping, 使用配置的id作为请求的名字来自动路由到不同服务器
 		for (var k in this.allServers) {
-			this.runCommand("rpc","ping",{serverId:this.allServers[k].id},{typ:logicApp.typ,id:logicApp.id,serverId:this.allServers[k].id},this.onPong.bind(this));
+			this.callCommand("rpc","ping",{serverId:this.allServers[k].id},{typ:logicApp.typ,id:logicApp.id,serverId:this.allServers[k].id,balance:balance},this.onPong.bind(this));
 		}
 	},
 	onReqTimeout : function(reqId){

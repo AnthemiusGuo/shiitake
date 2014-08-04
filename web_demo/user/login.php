@@ -9,5 +9,6 @@ if ($ticket===false){
 	$json_rst['data']['ticket'] = $ticket;
 	$redis->setTimeout($redis_key, 3600);
 }
+$json_rst['data']['lobby'] = array("host"=>"127.0.0.1","clientPort"=>3000);
 $json_rst['ret'] = 1;
 ?>

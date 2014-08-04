@@ -1,4 +1,4 @@
-var rpcServer = Class.extend({
+var rpcCaller = Class.extend({
 	// constructor
 	//"runTyp":"web",
 	// "rpcMode":"upstream",
@@ -23,4 +23,4 @@ var rpcServer = Class.extend({
 	}
 });
 
-module.exports = rpcServer;
+module.exports = rpcCaller;

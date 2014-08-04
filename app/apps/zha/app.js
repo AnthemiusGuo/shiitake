@@ -17,7 +17,11 @@ var ZhaServer = GameServer.extend({
 
 		var Analyser =  require('app/apps/zha/analyser');
 		this.analyser = new Analyser();
+		this.tableCounter = 0;
 
+	},
+	genLoadBalance : function() {
+		return this.tableCounter;
 	},
 	doLogin : function(data,userSession,packetId) {
 		var uid = data.uid;
@@ -98,6 +102,7 @@ var ZhaServer = GameServer.extend({
 		// };
 		
 	},
+	
 	findTable : function(preferTableId){
 		if (preferTableId!=0) {
 			if (F.isset(this.tables[preferTableId])) {
@@ -133,11 +138,13 @@ var ZhaServer = GameServer.extend({
 		this.tables[tableId] = new Table(tableId,this.roomConfig);
 		this.tables[tableId].run();
 		this.analyser.initTable(tableId);
+		this.tableCounter++;
 		return tableId;
 	},
 	deleteTable : function(tableId) {
 		this.tables[tableId].stop();
 		this.tables[tableId] = null;
+		this.tableCounter--;
 	},
 	joinTable : function(tableId,userSession){
 		this.onlineUsers[userSession.uid] = userSession;

@@ -1,5 +1,5 @@
-var RpcServer = require('framework/rpc/websocket');
-var LobbyRPC = RpcServer.extend({
+var RpcCaller = require('framework/rpcCaller/websocket');
+var LobbyRPC = RpcCaller.extend({
 
 });
 module.exports = LobbyRPC;

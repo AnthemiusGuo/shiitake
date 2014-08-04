@@ -27,9 +27,19 @@ or
 
 export NODE_ENV=development
 
-code structure
+server structure
 ----------
+server typs for framework
 
+* Connector server : as lobby server for some typ game
+* Game Server : for some typ game
+* Event Driver : Event for games
+* Upstream Server : Http server
+
+server typ for example game
+* Lobby Server : inher... from Connector server
+* Zha : inher from game server
+* robot : a robot server for games 
 
 
 note
@@ -40,5 +50,7 @@ note
 e.g.
 ----------
 * node app.js --typ=lobby --id=lobby-server-1 
+
 * node app.js --typ=zha --id=zha-srv-1-1
+
 * node app.js --typ=robot --id=robot-server-zha

@@ -6,8 +6,6 @@ var BaseApp = Class.extend({
 		this.info = info;
 		this.errorInfo = "";
 
-		this.userSocketManager = new BaseSocketManager(this,"user",this.typ);
-		this.rpcSocketManager = new BaseSocketManager(this,"rpc",this.typ);
 		this.allReady = false;
 		this.firstAllReady = false;
 		//如果初始化时候需要自己先读取数据库等才允许其他人rpc调用, 则不启动RPC接口
@@ -28,6 +26,10 @@ var BaseApp = Class.extend({
 	},
 	prepare : function() {
 		utils.PLEASE_OVERWRITE_ME();
+	},
+	genLoadBalance : function() {
+		utils.PLEASE_OVERWRITE_ME();
+		return 0;
 	},
 	run : function() {
 		//如果启动需要先读取数据库什么的, 就重写初始化时候把this.serverInitReady置为false,
@@ -72,6 +74,8 @@ var BaseApp = Class.extend({
 		if (this.firstAllReady==false) {
 			this.firstAllReady = true;
 			this.onAllReady();
+		} else {
+			this.onReReady();
 		}
 	},
 	onAllReady : function() {
@@ -81,48 +85,21 @@ var BaseApp = Class.extend({
 		dmManager.setHashKeyValueKVDBGlobal("srvRun/"+this.id,"startTS",this.startTS);
 
 	},
+	onReReady : function() {
+		this.readyTS = new Date().getTime();
+		dmManager.setHashKeyValueKVDBGlobal("srvSta/"+this.typ,this.id,1);
+		dmManager.setHashKeyValueKVDBGlobal("srvRun/"+this.id,"readyTS",this.readyTS);
+	},
 	onPause : function(reason) {
 		//故障暂停，
 		this.allReady = false;
+		this.readyTS = new Date().getTime();
 		dmManager.setHashKeyValueKVDBGlobal("srvSta/"+this.typ,this.id,2);
+		dmManager.setHashKeyValueKVDBGlobal("srvRun/"+this.id,"readyTS",this.readyTS);
+		
+		logger.info("server onPause by reason ",reason);
+
 		this.checkReadyTick = setInterval(this.checkStatus.bind(this),3000);
-	},
-	onMsg : function(rpcOrClient,socket,msg) {
-		var package = JSON.parse(msg);
-		if (!F.isset(package.c) || !F.isset(package.m) || !F.isset(package.d) || !F.isset(package.t) || !F.isset(package.s) || !F.isset(package.r)) {
-			var packetSerId = package.s;
-			this.sendToClientErrBySocket(socket,-9999,"信令格式有误",packetSerId);
-			return;
-		}
-		var packetSerId = package.s;
-		var category = package.c;
-		var method = package.m;
-		var data = package.d;
-		var ts = package.t;
-		var ret = package.r;
-
-		if (rpcOrClient=="rpc") {
-			var sockManager = this.rpcSocketManager;
-		} else {
-			var sockManager = this.userSocketManager;
-		}
-		var getRouteHandler = sockManager.initPackageRouter(category);
-		if (getRouteHandler<0) {
-			this.sendToClientErrBySocket(socket,getRouteHandler,"信令不存在",packetSerId);
-			return;
-		}
-		if (!F.isset(sockManager.packageRouter[category][method])) {
-			this.sendToClientErrBySocket(socket,-9997,"信令不存在",packetSerId);
-			return;
-		}
-		if (!F.isset(sockManager.socketClientMapping[socket.socket_id])) {
-			this.sendToClientErrBySocket(socket,-9996,"Session丢失",packetSerId);
-			return;
-		}
-
-		var userSession = sockManager.socketClientMapping[socket.socket_id];
-
-		sockManager.packageRouter[category][method](userSession,ret,ts,data,packetSerId);
 	},
 	sendToClientBySocket : function(socket,category,method,ret,packetId,data){
 		var ts =  new Date().getTime();
@@ -145,15 +122,15 @@ var BaseApp = Class.extend({
 		userSession.isLogined = true;
 		userSession.id = typ+"/"+id;
 		userSession.serverId = typ+"/"+id;
-		userSession.send("user","loginAck",1,packetId,{});
+		userSession.send("rpc","loginAck",1,packetId,{});
 	},
-	rpc_ping : function(typ,id,userSession,packetId) {
-		var ts =  new Date().getTime();
-		userSession.lastPing = ts;
-		userSession.send("rpc","pong",1,packetId,{t:ts});
+	rpc_ping : function(typ,id,data) {
+		//Nothing to do, for some typ app, should use this to check server online info
 	},
 	openRPCServer : function(){
 		//对服务器RPC接口
+
+		this.rpcSocketManager = new BaseSocketManager(this,"rpc",this.typ);
 		var serversInfo = this.info;
 		global.backServer = new WebSocketServer({port: serversInfo.port});
 		backServer.rpcClients = {};
@@ -167,8 +144,9 @@ var BaseApp = Class.extend({
 
 		    var clientSession = new ClientRPC(socket);
 		    logicApp.rpcSocketManager.onNewSocketConnect(clientSession,socket);
+
 		    socket.on('message', function(message) {
-		        logicApp.onMsg("rpc",socket,message)
+		        logicApp.rpcSocketManager.onRecv(clientSession,message)
 		    })
 		    .on('close',function(code, message){
 		        logger.info("===closed rpc client");
@@ -179,6 +157,8 @@ var BaseApp = Class.extend({
 		});
 	},
 	openUserServer : function(){
+
+		this.userSocketManager = new BaseSocketManager(this,"user",this.typ);
 		var serversInfo = this.info;
 		//支持对用户接入,监听用户端口
 	    global.frontServer = new WebSocketServer({port: serversInfo.clientPort});
@@ -197,8 +177,7 @@ var BaseApp = Class.extend({
 	        }
 	        logicApp.userSocketManager.onNewSocketConnect(clientSession,socket);
 	        socket.on('message', function(message) {
-	            logger.trace(message);
-	            logicApp.onMsg("user",socket,message)
+	            logicApp.userSocketManager.onRecv(clientSession,message)
 	        })
 	        .on('close',function(code, message){
 	            logger.debug("===closed user client");

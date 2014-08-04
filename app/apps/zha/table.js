@@ -480,7 +480,7 @@ var Table = TablePublic.extend({
 		//rpc 通知Lobby以下用户发生数据变化, 为了节约信令, 采用batch通知
 	    //upsteam无需通知,只要改变缓存内的值,直接可以生效
 	    //typ,category,method,id,params){
-	    rpc.call("lobby","user","batchReload",{broadcast:true},{uids:uids});
+	    rpc.typBroadcastCall("lobby","user","batchReload",{uids:uids});
 
 		this.uidChanged = {};
 	},

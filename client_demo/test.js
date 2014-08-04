@@ -111,13 +111,14 @@ function recvLog(typ,msg) {
 }
 
 function sendGame(category,method,data) {
-	var dd = new Date();
-	var ts = dd.getTime();
-	var packet = {'c':category,'m':method,'d':data,'t':ts,'s':packetId,'r':1};
-	gameSocket.send(JSON.stringify(packet));
-	packetId++;
-	sendLog("game",packet);
-	consoleLog("game","send "+category+" "+method);
+	sendLobby(category,method,data) ;
+	// var dd = new Date();
+	// var ts = dd.getTime();
+	// var packet = {'c':category,'m':method,'d':data,'t':ts,'s':packetId,'r':1};
+	// gameSocket.send(JSON.stringify(packet));
+	// packetId++;
+	// sendLog("game",packet);
+	// consoleLog("game","send "+category+" "+method);
 }
 
 var User = function(uid){
@@ -125,7 +126,11 @@ var User = function(uid){
 }
 User.prototype.onGameMsg_loginAck = function(category,method,data,ts,packetId,ret) {
 	consoleLog("game","logined!");
-	sendGame('game','joinTableReq',{prefer:0})
+	sendGame('zha','enterGameReq',{roomId:0})
+}
+User.prototype.onGameMsg_enterGameAck = function(category,method,data,ts,packetId,ret) {
+	consoleLog("game","logined!");
+	sendGame('zha','joinTableReq',{prefer:0})
 }
 User.prototype.onGameMsg_unknown = function(category,method,data,ts,packetId,ret) {
 	recvLog("game","unkonwn package!!!");
@@ -274,30 +279,14 @@ $.getJSON(webUrl+"?m=user&a=login&uid="+uid,function(json){
 		return;
 	}
 	ticket = json.data.ticket;
-
-	lobbySocket = new WebSocket("ws://127.0.0.1:3000");
+	lobby = json.data.lobby;
+	lobbySocket = new WebSocket("ws://"+lobby.host+":"+lobby.clientPort);
 	lobbySocket.onopen = function() {
 		consoleLog("lobby","open");
-		sendLobby('user','loginReq',{uid:user.uid,ticket:ticket})
+		sendLobby('user','loginReq',{uid:user.uid,ticket:ticket,from:"zha"})
 	};
 	lobbySocket.onmessage = function(e) {
 	// Receives a message.
-		recvLog("lobby",e.data);
-		var msg = JSON.parse(e.data);
-		if (msg.r<0) {
-			consoleLog("lobby",'<span class="red">'+msg.d.e+'</span>');
-			return;
-		} 
-	};
-	lobbySocket.onclose = function() {
-		consoleLog("lobby","closed");
-	};
-	gameSocket = new WebSocket("ws://127.0.0.1:3010");
-	gameSocket.onopen = function() {
-		consoleLog("game","open");
-		sendGame('user','loginReq',{uid:user.uid,ticket:ticket})
-	};
-	gameSocket.onmessage = function(e) {
 		recvLog("game",e.data);
 		var msg = JSON.parse(e.data);
 		if (msg.r<0) {
@@ -326,8 +315,8 @@ $.getJSON(webUrl+"?m=user&a=login&uid="+uid,function(json){
 			}
 		}
 	};
-	gameSocket.onclose = function() {
-		consoleLog("game","closed");
+	lobbySocket.onclose = function() {
+		consoleLog("lobby","closed");
 	};
 });
 

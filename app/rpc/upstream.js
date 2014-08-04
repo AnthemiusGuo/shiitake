@@ -1,2 +1,2 @@
-var RpcServer = require('framework/rpc/upstream');
-module.exports = RpcServer;
+var RpcCaller = require('framework/rpcCaller/upstream');
+module.exports = RpcCaller;

@@ -22,6 +22,11 @@ config.upstreamUrl = {
 	url:""
 }
 
+config.allowLoginFrom = {
+	zha : "zha",
+	yao : 1
+}
+
 if (PRODUCTION==="production") {
 	config.servers = {
 	    "connector": [
@@ -81,7 +86,9 @@ if (PRODUCTION==="production") {
 	    	"rpcMustConnect" : false,
 	    	"indexMode": ["room","money"],//different server for different room
 	    	"serverList" : {
-	    		"zha-srv-1-1":{"id":"zha-srv-1-1","host":"127.0.0.1","port":3011,"clientPort":3010,"frontend":true,"indexParam":{"roomId":1,"minEntry":1000,"maxEntry":10000}}
+	    		// "zha-srv-1-1":{"id":"zha-srv-1-1","host":"127.0.0.1","port":3011,"clientPort":3010,"frontend":true,"indexParam":{"roomId":1,"minEntry":1000,"maxEntry":10000}}
+	    		//cap:容量，对于本类型游戏，容量就是桌子数，开了几张桌子
+	    		"zha-srv-1-1":{"id":"zha-srv-1-1","host":"127.0.0.1","port":3011,"frontend":false,"indexParam":{"roomId":1,"minEntry":1000,"maxEntry":10000},"cap":50}
 	    	}
 	    	
 	    },

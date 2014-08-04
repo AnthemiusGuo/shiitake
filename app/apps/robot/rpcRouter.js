@@ -1,9 +1,6 @@
-var BaseController = require("app/controllers/rpc/base/user");
-var ClientCtrller = BaseController.extend({
-	init : function (app){
-		this._super(app);
-	},	
-	join : function(clientSession,ret,ts,data,packetSerId) {
+var BaseRPCRouter = require('framework/router/rpcRouter');
+var RPCRouter = BaseRPCRouter.extend({
+	on_msg_user_join : function(clientSession,ret,ts,data,packetSerId) {
 		// { typ: 'zha', id: 'zha-server-1', serverId: 'lobby-server-1' }
 		if (!utils.checkParam(data,["count","tableId","serverId","ticket"])) {
 			clientSession.sendErrPackFormat(packetSerId);
@@ -13,7 +10,7 @@ var ClientCtrller = BaseController.extend({
 		//初始化服务器信息
 		this.app.askRobotJoin(data.serverId,data.tableId,data.ticket,data.count);
 	},
-	joinAndAskZhuang : function(clientSession,ret,ts,data,packetSerId) {
+	on_msg_user_joinAndAskZhuang : function(clientSession,ret,ts,data,packetSerId) {
 		// { typ: 'zha', id: 'zha-server-1', serverId: 'lobby-server-1' }
 		if (!utils.checkParam(data,["count","tableId","serverId","ticket"])) {
 			clientSession.sendErrPackFormat(packetSerId);
@@ -24,5 +21,4 @@ var ClientCtrller = BaseController.extend({
 		this.app.askRobotZhuang(data.serverId,data.tableId,data.ticket,data.count);
 	},
 });
-
-module.exports = ClientCtrller;
+module.exports = RPCRouter;
