@@ -16,6 +16,7 @@
 
 // Let the library know where WebSocketMain.swf is:
 WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
+var GAME_ID = 1;
 var packetId = 0;
 var uid = 21;
 var webUrl = "http://127.0.0.1/shiitake/shiitake/web_demo/server.php";
@@ -124,16 +125,25 @@ function sendGame(category,method,data) {
 var User = function(uid){
 	this.uid = uid;
 }
-User.prototype.onGameMsg_loginAck = function(category,method,data,ts,packetId,ret) {
-	consoleLog("game","logined!");
-	sendGame('zha','enterGameReq',{roomId:0})
+User.prototype.onUserMsg_loginAck = function(category,method,data,ts,packetId,ret) {
+	consoleLog("lobby","logined!");
+	
 }
+User.prototype.onUserMsg_roomListNot = function(category,method,data,ts,packetId,ret) {
+	consoleLog("lobby","room list!");
+	for (var k in data.roomList){
+		var v =  data.roomList[k];
+		consoleLog("lobby","room id:"+v.roomId+";roomName:"+v.room_name+";room Desc:"+v.room_desc+";online:"+v.online);
+	}
+	sendGame('game','enterGameReq',{roomId:10,gameId:GAME_ID})
+}
+
 User.prototype.onGameMsg_enterGameAck = function(category,method,data,ts,packetId,ret) {
-	consoleLog("game","logined!");
+	consoleLog("lobby","logined!");
 	sendGame('zha','joinTableReq',{prefer:0})
 }
-User.prototype.onGameMsg_unknown = function(category,method,data,ts,packetId,ret) {
-	recvLog("game","unkonwn package!!!");
+User.prototype.onUserMsg_unknown = function(category,method,data,ts,packetId,ret) {
+	consoleLog("lobby","unkonwn package!!!");
 }
 
 var Table = function(tableId){
@@ -283,7 +293,7 @@ $.getJSON(webUrl+"?m=user&a=login&uid="+uid,function(json){
 	lobbySocket = new WebSocket("ws://"+lobby.host+":"+lobby.clientPort);
 	lobbySocket.onopen = function() {
 		consoleLog("lobby","open");
-		sendLobby('user','loginReq',{uid:user.uid,ticket:ticket,from:"zha"})
+		sendLobby('user','loginReq',{uid:user.uid,ticket:ticket,from:GAME_ID})
 	};
 	lobbySocket.onmessage = function(e) {
 	// Receives a message.
@@ -294,10 +304,10 @@ $.getJSON(webUrl+"?m=user&a=login&uid="+uid,function(json){
 			return;
 		} 
 		if (msg.c == "user") {
-			if (typeof(user["onGameMsg_"+msg.m])=="undefined") {
-				user.onMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+			if (typeof(user["onUserMsg_"+msg.m])=="undefined") {
+				user.onUserMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
 			} else {
-				user["onGameMsg_"+msg.m](msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+				user["onUserMsg_"+msg.m](msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
 			}
 		} else if (msg.c == "error") {
 			consoleLog("game",'<span class="red">'+msg.d.e+'</span>');

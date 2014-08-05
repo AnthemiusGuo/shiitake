@@ -14,7 +14,7 @@ var ConnectorServer = BaseServer.extend({
             for (var x in v.serverList) {
                 var y = v.serverList[x];
                 //lb is short for load balance
-                this.gameServers[k][x] = {status:-1,lb:{balance:0,capability:y.cap},lastPing:0};
+                this.gameServers[k][x] = {status:-1,lb:{balance:0,capability:y.cap,percent:0},lastPing:0};
             }
         }
 	},
@@ -24,15 +24,20 @@ var ConnectorServer = BaseServer.extend({
         if (F.isset(this.gameServers[typ]) && F.isset(this.gameServers[typ][id])) {
             this.gameServers[typ][id].lastPing = ts;
             this.gameServers[typ][id].lb.balance = data.balance;
+            this.gameServers[typ][id].lb.percent = this.gameServers[typ][id].lb.balance / this.gameServers[typ][id].lb.capability;
 
         }
 
     },
     onGameServerReady : function(data) {
         //检查是否是游戏服务器
+        var typ = data.typ;
+        var id = data.id;
+        
         if (F.isset(this.gameServers[data.typ]) && F.isset(this.gameServers[data.typ][data.id])) {
             this.gameServers[data.typ][data.id].status = 1;
-            this.gameServers[typ][id].lb.balance = data.balance;
+            this.gameServers[data.typ][data.id].lb.balance = data.balance;
+            this.gameServers[data.typ][data.id].lb.percent = this.gameServers[data.typ][data.id].lb.balance / this.gameServers[typ][id].lb.capability;
         }
     },
 	_genTicket : function(uid){

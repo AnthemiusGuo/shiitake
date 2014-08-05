@@ -22,9 +22,9 @@ config.upstreamUrl = {
 	url:""
 }
 
-config.allowLoginFrom = {
-	zha : "zha",
-	yao : 1
+config.gameIdToServer = {
+	1 : "zha",
+	2 : "yao"
 }
 
 if (PRODUCTION==="production") {
@@ -88,9 +88,8 @@ if (PRODUCTION==="production") {
 	    	"serverList" : {
 	    		// "zha-srv-1-1":{"id":"zha-srv-1-1","host":"127.0.0.1","port":3011,"clientPort":3010,"frontend":true,"indexParam":{"roomId":1,"minEntry":1000,"maxEntry":10000}}
 	    		//cap:容量，对于本类型游戏，容量就是桌子数，开了几张桌子
-	    		"zha-srv-1-1":{"id":"zha-srv-1-1","host":"127.0.0.1","port":3011,"frontend":false,"indexParam":{"roomId":1,"minEntry":1000,"maxEntry":10000},"cap":50}
-	    	}
-	    	
+	    		"zha-srv-1-1":{"id":"zha-srv-1-1","host":"127.0.0.1","port":3011,"frontend":false,"cap":50,"roomId":10}
+	    	},
 	    },
 	    // "yao":{
 	    // 	"runTyp":"nodejs",

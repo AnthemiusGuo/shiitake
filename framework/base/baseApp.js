@@ -16,6 +16,8 @@ var BaseApp = Class.extend({
 		dmManager.setHashKeyValueKVDBGlobal("srvSta/"+this.typ,this.id,0);
 		this.globalTicket = F.md5(this.startTS+"sKlaa"+this.id);
 		logger.info("this.globalTicket",this.globalTicket);
+
+		this.checkReadyTick = null;
 	},
 	getErr : function(){
 		return this.errorInfo;
@@ -37,7 +39,10 @@ var BaseApp = Class.extend({
 		if (this.serverInitReady) {
 			this.openSocketServer();
 		}
-		this.checkReadyTick = setInterval(this.checkStatus.bind(this),3000);
+		if (this.checkReadyTick ==null) {
+			this.checkReadyTick = setInterval(this.checkStatus.bind(this),3000);
+		}
+		
 	},
 	checkStatus : function() {
 		if (this.serverInitReady && !this.serverSocketListenReady){
@@ -69,6 +74,7 @@ var BaseApp = Class.extend({
 
 		this.allReady = true;
 		clearInterval(this.checkReadyTick);
+		this.checkReadyTick = null;
 		logger.info("All server Ready!!");
 
 		if (this.firstAllReady==false) {
@@ -83,12 +89,16 @@ var BaseApp = Class.extend({
 		dmManager.setHashKeyValueKVDBGlobal("srvSta/"+this.typ,this.id,1);
 		dmManager.setHashKeyValueKVDBGlobal("srvRun/"+this.id,"readyTS",this.readyTS);
 		dmManager.setHashKeyValueKVDBGlobal("srvRun/"+this.id,"startTS",this.startTS);
+		clearInterval(this.checkReadyTick);
+		this.checkReadyTick = null;
 
 	},
 	onReReady : function() {
 		this.readyTS = new Date().getTime();
 		dmManager.setHashKeyValueKVDBGlobal("srvSta/"+this.typ,this.id,1);
 		dmManager.setHashKeyValueKVDBGlobal("srvRun/"+this.id,"readyTS",this.readyTS);
+		clearInterval(this.checkReadyTick);
+		this.checkReadyTick = null;
 	},
 	onPause : function(reason) {
 		//故障暂停，
@@ -98,8 +108,9 @@ var BaseApp = Class.extend({
 		dmManager.setHashKeyValueKVDBGlobal("srvRun/"+this.id,"readyTS",this.readyTS);
 		
 		logger.info("server onPause by reason ",reason);
-
-		this.checkReadyTick = setInterval(this.checkStatus.bind(this),3000);
+		if (this.checkReadyTick ==null) {
+			this.checkReadyTick = setInterval(this.checkStatus.bind(this),3000);
+		}
 	},
 	sendToClientBySocket : function(socket,category,method,ret,packetId,data){
 		var ts =  new Date().getTime();

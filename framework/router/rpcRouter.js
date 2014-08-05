@@ -59,10 +59,10 @@ var RpcRouter = Class.extend({
 		//初始化服务器信息
 		this.app.batchReload(data.uids);
 	},
-	on_msg_rpc_serverReady : function(userSession,ret,ts,data,packetSerId) {
+	on_msg_rpc_serverReady : function(clientSession,ret,ts,data,packetSerId) {
 		//{"c":"user","m":"login","d":{"uid":1},"t":1404292893355,"s":0,"r":1}
 		if (!utils.checkParam(data,["typ","id"])) {
-			userSession.sendErrPackFormat(packetSerId);
+			clientSession.sendErrPackFormat(packetSerId);
 			return;
 		}
 		
@@ -70,6 +70,14 @@ var RpcRouter = Class.extend({
 		
 		//异步初始化玩家信息，获取用户信息后回复 login 请求
 		this.app.onGameServerReady(data);
+	},
+	on_msg_game_enterGameReq : function(clientSession,ret,ts,data,packetSerId) {
+		//游戏服务器的大厅进入游戏信令
+		if (!utils.checkParam(data,["uid","lobbyId"])) {
+			clientSession.sendErrPackFormat(packetSerId);
+			return;
+		}
+		this.app.onEnterGame(clientSession,data,packetSerId);
 	},
 });
 

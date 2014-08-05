@@ -3,92 +3,36 @@ var ZhaServer = GameServer.extend({
 	init : function(typ,id,info) {
 		this._super(typ,id,info);
 		
-		this.roomId = info.indexParam.roomId;
+		this.roomId = info.roomId;
 		this.tables = {};
 		this.onlineUsers = {};
 		var roomConfigs = require('app/config/zha');
-		this.roomConfig = roomConfigs.servers[this.id];
-		this.tableIdBegin = this.roomConfig.tableIdBegin;
-		this.tableIdEnd = this.roomConfig.tableIdEnd;
+		this.tableConfig = roomConfigs.servers[this.id];
+		this.roomConfig = roomConfigs.rooms["zha-room-"+this.tableConfig.roomId];
+
+		//table 开牌覆盖room
+		if (F.isset(this.tableConfig.openBig)){
+			this.roomConfig.openBig = this.tableConfig.openBig;
+		}
+
+		this.tableIdBegin = this.tableConfig.tableIdBegin;
+		this.tableIdEnd = this.tableConfig.tableIdEnd;
+		this.maxUserPerTable = this.tableConfig.maxUserPerTable;
+
 		this.state = "init";
 		this.tableId = this.tableIdBegin;
 
-		this.maxUserPerTable = this.roomConfig.maxUserPerTable;
+		
 
 		var Analyser =  require('app/apps/zha/analyser');
 		this.analyser = new Analyser();
 		this.tableCounter = 0;
 
+		global.User = require('app/apps/zha/user');
+
 	},
 	genLoadBalance : function() {
 		return this.tableCounter;
-	},
-	doLogin : function(data,userSession,packetId) {
-		var uid = data.uid;
-		var ticket = data.ticket;
-		if (F.isset(this.userSocketManager.idClientMapping[uid])) {
-			this.userSocketManager.idClientMapping[uid].kickUser();
-		}
-		var self = this;
-		async.waterfall([
-            function verifyTicket(callback) {
-                logger.debug("verifyTicket");
-                //hack用超級ticket，這個給robot用的
-                logger.debug("globalTicket",this.globalTicket,ticket);
-                if (this.globalTicket == ticket) {
-                	callback(null);
-                	return;
-                }
-                var real_key = "user/ticket/"+uid;
-                kvdb.get(real_key,function(err, reply) {
-                    logger.debug("verifyTicket result",reply);
-                    if (err) {
-                        callback(-2,err);
-                        return;
-                    }
-                    if (reply===null) {
-                        callback(-1,"don't hit ticket cache");
-                        return;
-                    }
-                    //hit cache!!!
-                    if (reply!=ticket){
-                    	callback(-3,"ticket Error!");
-                    	return;
-                    }
-                    callback(null);
-                });
-            }.bind(this),
-            function getInfo(callback){
-                logger.debug("getInfo");
-                dmManager.getData("user","BaseInfo",{uid:uid},function(ret,data){
-                    logger.debug("getInfo result",ret);
-                    if (ret>0) {
-                    	callback(null, data);
-                    } else {
-                    	callback(-4,"no user info");
-                    }
-                });
-            },
-            function sendBack(data, callback){
-
-                this.userSocketManager.idClientMapping[uid] = userSession;
-				userSession.isLogined = true;
-				userSession.id = uid;
-				userSession.uid = uid;
-				userSession.userInfo = data;
-				userSession.is_robot = (data.is_robot==1);
-				userSession.onGetUserInfo();
-				userSession.send("user","loginAck",1,packetId,{})
-				//无需再callback了
-                // callback(null, 'done');
-            }.bind(this)
-        ], function doneAll (err, result) {
-            if (err) {
-                logger.error("doneAll with err",err,result);
-                userSession.send("user","loginAck",err,packetId,{e:"登录失败"})
-            }
-            
-        });	
 	},
 	prepare : function() {
 		//nothing to do 
@@ -150,6 +94,11 @@ var ZhaServer = GameServer.extend({
 		this.onlineUsers[userSession.uid] = userSession;
 		userSession.joinTable(this.tables[tableId]);
 		this.tables[tableId].onJoinTable(userSession);
+	},
+	checkCanEnterGame : function(data) {
+		//用户钱够不
+		// this.roomConfig
+		return [1,""];
 	}
 
 });

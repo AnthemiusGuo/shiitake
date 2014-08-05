@@ -1,7 +1,7 @@
-var BaseClient = require('framework/base/baseClient');
-var ZhaClient = BaseClient.extend({
-	init : function(socket) {
-		this._super(socket);
+var BaseUser = require('framework/base/baseDryUser');
+var ZhaUser = BaseUser.extend({
+	init : function(lobbyId,rpcSession) {
+		this._super(lobbyId,rpcSession);
 		this.credits = 0;
 		//机器人也是一个普通用户链接
 		this.is_robot = false;
@@ -32,4 +32,4 @@ var ZhaClient = BaseClient.extend({
 
 	},
 });
-module.exports = ZhaClient;
+module.exports = ZhaUser;
