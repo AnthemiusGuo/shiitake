@@ -64,9 +64,13 @@ var UserRouter = BaseUserRouter.extend({
 		data.uid = userSession.uid;
 
 		rpc.call(config.gameIdToServer[data.gameId],"game",method,{serverId:userSession.gameServerId},data,function(category,method,ret,data,req){
-			userSession.send()
+			if (F.isset(this["handle_data_"+category+"_"+method])){
+				data = this["handle_data_"+category+"_"+method](data);
+			}
+			userSession.send(category,method,ret,packetSerId,data);
+
 			logger.info("transfer req to game server",ret,data);
-		});
+		}.bind(this));
 		
 	},
 	on_msg_table_default : function(method,userSession,ret,ts,data,packetSerId) {
@@ -88,10 +92,25 @@ var UserRouter = BaseUserRouter.extend({
 		data.uid = userSession.uid;
 		
 		rpc.call(config.gameIdToServer[data.gameId],"game",method,{serverId:userSession.gameServerId},data,function(category,method,ret,data,req){
-			userSession.send();
+			//有的rpc 数据只返回 uid，但是实际需要 userInfo
+			if (F.isset(this["handle_data_"+category+"_"+method])){
+				data = this["handle_data_"+category+"_"+method](data);
+			}
+			userSession.send(category,method,ret,packetSerId,data);
 			logger.info("transfer req to game server",ret,data);
 		});
 		
 	},
+	handle_data_game_joinTableAck:function(data) {
+		//覆盖在线用户列表
+		for (var uid in data.usersIn){
+			if (!F.isset(logicApp.uidUserMapping[uid])) {
+				data.usersIn[uid] = null;
+				continue;
+			}
+			data.usersIn[uid] =  logicApp.uidUserMapping[uid].getUserShowInfo();
+		}
+		return data;
+	}
 });
 module.exports = UserRouter;

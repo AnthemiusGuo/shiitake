@@ -165,6 +165,10 @@ var LobbyServer = BaseServer.extend({
                 userSession.send("game","enterGameAck",-1,packetSerId,data);
             }
         }.bind(this));
+    },
+    onAllReady: function(){
+        this._super();
+        this.uidUserMapping = this.userSocketManager.idClientMapping;
     }
 });
 module.exports = LobbyServer;

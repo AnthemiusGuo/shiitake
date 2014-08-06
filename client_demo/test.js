@@ -185,7 +185,7 @@ Table.prototype.onGameMsg_betAck = function(category,method,data,ts,packetId,ret
 }
 
 Table.prototype.onGameMsg_joinNot = function(category,method,data,ts,packetId,ret) {
-	consoleLog("game","广播:玩家"+data.uname+"加入游戏");
+	consoleLog("game","广播:玩家"+data.userInfo.uname+"加入游戏");
 	// sendGame('game','joinTable',{prefer:0})
 }
 Table.prototype.onGameMsg_WaitBetNot = function(category,method,data,ts,packetId,ret) {

@@ -881,6 +881,9 @@ var Table = TablePublic.extend({
 			if (this.userList[k]==null) {
 				continue;
 			}
+			if (!F.isset(logicApp.uidUserMapping[k])) {
+				continue;
+			}
 			if (k == this.zhuang_uid) {
 				//庄下线继续当庄
 				continue;
