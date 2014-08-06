@@ -10,6 +10,13 @@ var BaseClient = Class.extend({
 	onCloseSocket: function() {
 		this.isConnect = false;
 	},
+	directSend : function(packet) {
+		if (this.isConnect==false || !F.isset(this.socket)){
+			logger.error("not connect!!");
+			return;
+		}
+		this.socket.send(JSON.stringify(packet));
+	},
 	send : function(category,method,ret,packetId,data) {
 		if (this.isConnect==false || !F.isset(this.socket)){
 			logger.error("not connect!!");
@@ -51,28 +58,6 @@ var BaseClient = Class.extend({
 		if (this.socket) {
 			this.socket.close();
 			this.socket = null;
-		}
-	},
-	getUserShowInfo : function() {
-		if (!F.isset(this.userInfo)){
-			//返回错误信息
-			return {
-				uid : this.userInfo.uid,
-				uname : '[未知]',
-				avatar_url : '',
-				avatar_id : 0,
-				level : 0,
-				vip_level: 0
-			}
-
-		}
-		return {
-			uid : this.userInfo.uid,
-			uname : this.userInfo.uname,
-			avatar_url : this.userInfo.avatar_url,
-			avatar_id : this.userInfo.avatar_id,
-			level : this.userInfo.level,
-			vip_level: this.userInfo.vip_level,
 		}
 	},
 	onGetUserInfo: function(){

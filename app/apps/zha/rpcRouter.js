@@ -5,18 +5,23 @@ var RPCRouter = BaseRPCRouter.extend({
 		logger.info("category,method,clientSession,ret,ts,data,packetSerId");
 		logger.info(category,method,clientSession,ret,ts,data,packetSerId);
 	},
-	joinTableReq : function(userSession,ret,ts,data,packetSerId) {
+	on_msg_game_joinTableReq : function(clientSession,ret,ts,data,packetSerId) {
 		//{"c":"user","m":"login","d":{"uid":1},"t":1404292893355,"s":0,"r":1}
-		if (!utils.checkParam(data,["prefer"])) {
+		if (!utils.checkParam(data,["prefer","uid"])) {
 			userSession.sendErrPackFormat(packetSerId);
 			return;
 		}
 		
 		//进桌
 		var preferTableId = data.prefer;
-		if (preferTableId==0) {
-			
-		}
+		var tableId = this.app.findTable(preferTableId);
+		var uid = data.uid;
+
+		logger.debug("find table ID:"+tableId);
+		var ret = this.app.doJoinTable(uid,tableId);
+
+		clientSession.send("game","joinTableAck",ret[0],packetSerId,ret[1]);
+
 	},
 	betReq : function(userSession,ret,ts,data,packetSerId) {
 		//{"c":"user","m":"login","d":{"uid":1},"t":1404292893355,"s":0,"r":1}

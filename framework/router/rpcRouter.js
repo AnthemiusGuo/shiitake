@@ -73,7 +73,7 @@ var RpcRouter = Class.extend({
 	},
 	on_msg_game_enterGameReq : function(clientSession,ret,ts,data,packetSerId) {
 		//游戏服务器的大厅进入游戏信令
-		if (!utils.checkParam(data,["uid","lobbyId"])) {
+		if (!utils.checkParam(data,["uid","lobbyId","userInfo"])) {
 			clientSession.sendErrPackFormat(packetSerId);
 			return;
 		}

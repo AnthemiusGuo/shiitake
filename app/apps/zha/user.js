@@ -7,13 +7,6 @@ var ZhaUser = BaseUser.extend({
 		this.is_robot = false;
 		this.reset();
 	},
-	login : function(uid) {
-		this.isLogined = true;
-		this.uid = uid;
-	},
-	joinTable : function(table) {
-		this.table = table;
-	},
 	onGetUserInfo : function() {
 		//缓存用户的钱,用于压注校验
 		this.credits  = this.userInfo.credits;

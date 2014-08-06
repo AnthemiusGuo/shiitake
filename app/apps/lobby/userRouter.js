@@ -44,6 +44,54 @@ var UserRouter = BaseUserRouter.extend({
 		}
 		var gameModule = config.gameIdToServer[data.gameId];
 		this.app.doEnterGame(gameModule,data,userSession,packetSerId);
-	}
+	},
+	on_msg_game_default : function(method,userSession,ret,ts,data,packetSerId) {
+		//游戏服务器的大厅各种其他游戏指令
+		if (!utils.checkParam(data,["gameId"])) {
+			userSession.sendErrPackFormat(packetSerId);
+			return;
+		}
+		if (!F.isset(config.gameIdToServer[data.gameId])) {
+			userSession.sendErrPackFormat(packetSerId);
+			return;
+		}
+
+		if (userSession.gameId != data.gameId) {
+			userSession.sendErr(-1000,"您尚未登录游戏服务器",packetSerId);
+			return;
+		}
+		//基本校验之后，直接转发到游戏服务器
+		data.uid = userSession.uid;
+
+		rpc.call(config.gameIdToServer[data.gameId],"game",method,{serverId:userSession.gameServerId},data,function(category,method,ret,data,req){
+			userSession.send()
+			logger.info("transfer req to game server",ret,data);
+		});
+		
+	},
+	on_msg_table_default : function(method,userSession,ret,ts,data,packetSerId) {
+		//游戏服务器的大厅各种其他游戏指令
+		if (!utils.checkParam(data,["gameId"])) {
+			userSession.sendErrPackFormat(packetSerId);
+			return;
+		}
+		if (!F.isset(config.gameIdToServer[data.gameId])) {
+			userSession.sendErrPackFormat(packetSerId);
+			return;
+		}
+
+		if (userSession.gameId != data.gameId) {
+			userSession.sendErr(-1000,"您尚未登录游戏服务器",packetSerId);
+			return;
+		}
+		//基本校验之后，直接转发到游戏服务器
+		data.uid = userSession.uid;
+		
+		rpc.call(config.gameIdToServer[data.gameId],"game",method,{serverId:userSession.gameServerId},data,function(category,method,ret,data,req){
+			userSession.send();
+			logger.info("transfer req to game server",ret,data);
+		});
+		
+	},
 });
 module.exports = UserRouter;

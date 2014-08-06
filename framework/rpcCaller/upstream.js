@@ -106,17 +106,17 @@ var HTTPRPC = RpcCaller.extend({
 		    		logger.trace("web return:",total_data);
 		    		var data = JSON.parse(total_data);
 		    		if (cb==undefined) {
-		    			self.onMsgAck(1,data,self.requestQueue[reqId]);
+		    			self.onMsgAck(req.c,req.m,1,data,self.requestQueue[reqId]);
 		    		} else {
-		    			cb(1,data,self.requestQueue[reqId]);
+		    			cb(self.requestQueue[reqId].category,self.requestQueue[reqId].method,1,data,self.requestQueue[reqId]);
 		    		}
 		    		self.requestQueue[reqId] = null;
 		    	} 
 		    	catch(err){
 		    		if (cb==undefined) {
-		    			self.onMsgAck(-1,err,self.requestQueue[reqId]);
+		    			self.onMsgAck(self.requestQueue[reqId].category,self.requestQueue[reqId].method,-1,err,self.requestQueue[reqId]);
 		    		} else {
-		    			cb(-1,err,self.requestQueue[reqId]);
+		    			cb(self.requestQueue[reqId].category,self.requestQueue[reqId].method,-1,err,self.requestQueue[reqId]);
 		    		}
 		    		self.requestQueue[reqId] = null;
 		    	}
@@ -147,9 +147,10 @@ var HTTPRPC = RpcCaller.extend({
 		    }).on('end',function(){
 		    	try {
 		    		var data = JSON.parse(total_data);
-		    		cb(data);
+		    		cb(self.requestQueue[reqId].category,self.requestQueue[reqId].method,-1,err,self.requestQueue[reqId]);
 		    	} 
 		    	catch(err){
+		    		cb(self.requestQueue[reqId].category,self.requestQueue[reqId].method,-1,err,self.requestQueue[reqId]);
 		    		logger.error(err);
 		    	}
 		    	
@@ -165,10 +166,10 @@ var HTTPRPC = RpcCaller.extend({
 			this.callCommand(k,"ping",{},{typ:logicApp.typ,id:logicApp.id,balance:balance},this.onPong.bind(this));
 		}
 	},
-	onMsgAck: function(ret,data,req) {
-		logger.trace("unkown package!",ret,req,data);
+	onMsgAck: function(category,method,ret,data,req) {
+		logger.error("unhandled rpc response package!",ret,data);
 	},
-	onLoginAck: function(ret,data,req) {
+	onLoginAck: function(category,method,ret,data,req) {
 
 		if (ret>0) {
 			this.allServers[req.category].ready = true;
@@ -180,7 +181,7 @@ var HTTPRPC = RpcCaller.extend({
 			logger.error("error code "+ret);
 		}
 	},
-	onPong : function(ret,data,req) {
+	onPong : function(category,method,ret,data,req) {
 		if (ret>0) {
 
 		} else {

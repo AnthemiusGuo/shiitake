@@ -100,11 +100,11 @@ var Table = TablePublic.extend({
 		var zhuang_showInfo = {};
 
 		if (this.zhuang_uid!=0){
-			if (F.isset(this.userList[this.zhuang_uid])) {
-				zhuang_showInfo = this.userList[this.zhuang_uid].getUserShowInfo();
+			if (F.isset(logicApp.uidUserMapping[this.zhuang_uid])) {
+				zhuang_showInfo = logicApp.uidUserMapping[this.zhuang_uid].getUserShowInfo();
 			}
 		}
-		this.doBroadcast("table","StartNot",1,0,{cd:this.stateConfig[this.state].timer,zhuang_uid:this.zhuang_uid,zhuang_info:zhuang_showInfo});
+		this.doBroadcast("table","StartNot",{cd:this.stateConfig[this.state].timer,zhuang_uid:this.zhuang_uid,zhuang_info:zhuang_showInfo});
 
 		//機器人相關
 		if (this.roborCount<10) {
@@ -121,12 +121,12 @@ var Table = TablePublic.extend({
 	doWaitBet : function(){
 		//没啥要做，给用户广播下
 		this.canBet = true;
-		this.doBroadcast("table","WaitBetNot",1,0,{cd:this.stateConfig[this.state].timer});
+		this.doBroadcast("table","WaitBetNot",{cd:this.stateConfig[this.state].timer});
 		this.betTick = setInterval(this.onTickWaitBet.bind(this),1000);
 	},
 	onTickWaitBet : function() {
 		if (this.bet_info_change) {
-			this.doBroadcast("table","InBetNot",1,0,{total_bet_info:this.bet_info});
+			this.doBroadcast("table","InBetNot",{total_bet_info:this.bet_info});
 			this.bet_info_change = false;
 		}
 	},
@@ -134,7 +134,7 @@ var Table = TablePublic.extend({
 		//没啥要做，给用户广播下
 		//用于安全周期而已
 		this.canBet = false;
-		this.doBroadcast("table","WaitOpenNot",1,0,{cd:this.stateConfig[this.state].timer});
+		this.doBroadcast("table","WaitOpenNot",{cd:this.stateConfig[this.state].timer});
 	},
 	_getIsOpenBig: function(isZhuang) {
 		if (isZhuang) {
@@ -593,8 +593,8 @@ var Table = TablePublic.extend({
 		if (this.zhuang_uid!=0){
 			var this_user = null;
 			//不是系统坐庄,写回数据
-			if (F.isset(this.userList[this.zhuang_uid].userInfo)  && this.userList[this.zhuang_uid].isConnect) {
-				this_user = this.userList[this.zhuang_uid];
+			if (F.isset(logicApp.uidUserMapping[this.zhuang_uid].userInfo)  && logicApp.uidUserMapping[this.zhuang_uid].isConnect) {
+				this_user = logicApp.uidUserMapping[this.zhuang_uid];
 	    		//已经有用户信息
 	    		if (this_user.is_robot) {
 		            player_win_credts += credits;
@@ -604,8 +604,8 @@ var Table = TablePublic.extend({
 	            this_user.userInfo['credits'] += zhuang_credits;
 	            this_user.userInfo['total_credits'] += zhuang_credits;
 	            zhuang_result_send['r'] = this_user.userInfo['credits'];
-				//通知用户				
-				this.userList[this.zhuang_uid].send("table","OpenNot",1,0,{zhuang_me:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
+				//通知用户	
+				this.doSinglecast(uid,"table","OpenNot",{zhuang_me:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
 	    	}
 	    	this.uidChanged[this.zhuang_uid]=0;
 	    	//用户加经验,钱
@@ -627,17 +627,16 @@ var Table = TablePublic.extend({
 	    for (var uid in user_get){
 	    	var credits = user_get[uid];
 	    	var this_user = null;
-	    	if (!F.isset(this.userList[uid])) {
+	    	if (!F.isset(logicApp.uidUserMapping[uid])) {
 	    		//用户未登录,这个应该是错误的状态,不应该出现
 	    		//防止出错,直接发数据库请求
 	    		var ClientUser = require('app/apps/'+appTyp+'/client');
 	    		this_user = new ClientUser(null);
 	    		this_user.isConnect = false;
-				this_user.isLogined = false;
 				this_user.uid = uid;
-				this.userList[uid] = this_user;
+				logicApp.uidUserMapping[uid] = this_user;
 	    	} else {
-	    		this_user = this.userList[uid];
+	    		this_user = logicApp.uidUserMapping[uid];
 	    	}
 	    	if (credits>0){
 	            var real_credits = Math.round(credits*(1-room_water_ratio));
@@ -648,7 +647,7 @@ var Table = TablePublic.extend({
 	        	var exp = 0;
 	        }
 
-	    	if (F.isset(this.userList[uid].userInfo) && this.userList[uid].isConnect) {
+	    	if (F.isset(logicApp.uidUserMapping[uid].userInfo) && logicApp.uidUserMapping[uid].isConnect) {
 	    		//已经有用户信息
 	    		if (this_user.is_robot) {
 		            player_win_credts += credits;
@@ -667,10 +666,10 @@ var Table = TablePublic.extend({
 				me_result_send['get_exp'] = exp;
 				me_result_send['cc'] = user_result[uid]['cc'];
 				me_result_send['r'] = this_user.userInfo['credits'];
-				if (this.userList[uid]==null) {
+				if (logicApp.uidUserMapping[uid]==null) {
 		    		continue;
 		    	}
-				this.userList[uid].send("table","OpenNot",1,0,{zhuang:zhuang_result_send,me:me_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
+		    	this.doSinglecast(uid,"table","OpenNot",{zhuang:zhuang_result_send,me:me_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
 	    	}
 	    	//用户加经验,钱
     		//写回用户信息
@@ -687,24 +686,24 @@ var Table = TablePublic.extend({
 			}.bind(this));
 	    }
 	    //未下注的人的广播
-	    for (var uid in this.userList){
+	    for (var uid in logicApp.uidUserMapping){
 	    	if (F.isset(user_get[uid])) {
 	    		continue;
 	    	}
 	    	if (uid==this.zhuang_uid) {
 	    		continue;
 	    	}
-	    	if (this.userList[uid]==null) {
+	    	if (logicApp.uidUserMapping[uid]==null) {
 	    		continue;
 	    	}
-	    	this.userList[uid].send("table","OpenNot",1,0,{zhuang:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
+	    	this.doSinglecast(uid,"table","OpenNot",{zhuang:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
 	    }
 	    
 	    this.zhuang_result_send = zhuang_result_send;
 	    this.openResult = openResult;
 
 	    if(this.zhuang_uid!=0) {
-	        var this_user = this.userList[this.zhuang_uid];
+	        var this_user = logicApp.uidUserMapping[this.zhuang_uid];
 	        if (this_user.is_robot) {
 	            player_win_credts += zhuang_get;
 	        }
@@ -718,12 +717,12 @@ var Table = TablePublic.extend({
 	onBet : function(uid,men,point,packetSerId){
 		logger.info("onBet",uid,men,point);
 
-		if (!F.isset(this.userList[uid])){
+		if (!F.isset(logicApp.uidUserMapping[uid])){
 			//no this user
 			logger.error("no user for this uid:"+uid);
 			return;
 		}
-		var userSession = this.userList[uid];
+		var userSession = logicApp.uidUserMapping[uid];
 		if (this.canBet==false) {
 			logger.error("this.canBet");
 			userSession.sendAckErr("table","betAck",-100,"当前牌桌不是下注阶段哦",packetSerId);
@@ -783,8 +782,8 @@ var Table = TablePublic.extend({
 		//category,method,ret,packetId,data
 		userSession.send("table","betAck",1,packetSerId,{total_bet_info:this.bet_info,my_bet_info:userSession.bet_info});
 	},
-	onJoinTable : function(userSession) {
-		logger.debug("user "+userSession.uid+" join the table");
+	onJoinTable : function(user) {
+		logger.debug("user "+user.uid+" join the table");
 
 
 		// 'room_limit_low' :1000,
@@ -794,19 +793,16 @@ var Table = TablePublic.extend({
 		// 		'room_zhuang_limit_low' :100000,
 		// 	    'room_zhuang_limit_high' :43990000,
 
-		if (false) { //userSession.userInfo.credits < this.roomConfig.room_limit_low) {
-			userSession.send("game","joinTableAck",-1,0,{e:'您的游戏币不足',room_limit_low:this.roomConfig.room_limit_low});
-			userSession.closeSocket();
-			userSession = null;
-			return;
+		if (false) { //user.userInfo.credits < this.roomConfig.room_limit_low) {
+			return [-101,{e:'您的游戏币不足',room_limit_low:this.roomConfig.room_limit_low}];
 		}
-		if (false) { //userSession.userInfo.credits > this.roomConfig.room_limit_high) {
-			userSession.send("game","joinTableAck",-1,0,{e:'您的游戏币过高',room_limit_high:this.roomConfig.room_limit_high});
-			userSession.closeSocket();
-			userSession = null;
-			return;
+		if (false) { //user.userInfo.credits > this.roomConfig.room_limit_high) {
+			return [-102,{e:'您的游戏币过高',room_limit_high:this.roomConfig.room_limit_high}];			
 		}
-		this.userList[userSession.uid] = userSession;
+
+		var uid = user.uid;
+		this.userList[uid] = 1;
+
 		this.userCounter = Object.keys(this.userList).length;
 
 		if (this.state=="init") {
@@ -819,31 +815,33 @@ var Table = TablePublic.extend({
 			if (this.userList[k]==null) {
 				continue;
 			}
-			allUsersInfo[this.userList[k].uid] = this.userList[k].getUserShowInfo();
+			allUsersInfo[k] = {uid:k};
 		}
-		userSession.send("game","joinTableAck",1,0,{tableId:this.tableId,usersIn:allUsersInfo,userZhuang:this.userZhuang});
-		this.doOptBroadcast("table","joinNot",1,0,userSession.getUserShowInfo());
+		
+		this.doOptBroadcast("table","joinNot",{uid:uid});
 		var now = new Date().getTime();
 		if (this.state !="AfterOpen") {
 			var cd = Math.ceil((now -  this.stateTime)/1000);
-			userSession.send("table",this.state+"Not",1,0,{cd:this.stateConfig[this.state].timer-cd});
+			this.doSinglecast(uid,"table",this.state+"Not",{cd:this.stateConfig[this.state].timer-cd});
 		} else {
 			var cd = Math.ceil((now -  this.stateTime)/1000);
-			userSession.send("table","OpenNot",1,0,{zhuang:this.zhuang_result_send,r:this.openResult,cd:this.stateConfig[this.state].timer-cd});
+			this.doSinglecast(uid,"table","OpenNot",{zhuang:this.zhuang_result_send,r:this.openResult,cd:this.stateConfig[this.state].timer-cd});
 		}
 
-		if (userSession.is_robot) {
+		if (user.is_robot) {
 			this.roborCount++;
 		}
+		user.tableId = this.tableId;
+		return [1,{tableId:this.tableId,usersIn:allUsersInfo,userZhuang:this.userZhuang}];
 	},
 	onAskZhuang : function(uid,data,packetSerId) {
 		var now = new Date().getTime();
-		if (!F.isset(this.userList[uid])){
+		if (!F.isset(logicApp.uidUserMapping[uid])){
 			//no this user
 			logger.error("no user for this uid:"+uid);
 			return;
 		}
-		var userSession = this.userList[uid];
+		var userSession = logicApp.uidUserMapping[uid];
 		if (!this.userZhuang) {
 			//不允许用户当庄
 			userSession.sendAckErr("table","askZhuangAck",-100,"这个房间不允许用户坐庄",packetSerId);
@@ -865,7 +863,7 @@ var Table = TablePublic.extend({
 				return;
 			}
 		};
-		var userSession = this.userList[uid];
+		var userSession = logicApp.uidUserMapping[uid];
 		//检查允许上庄情况
 		if (userSession.userInfo.credits < this.roomConfig.room_zhuang_limit_low){
 			//钱不够,跳过
@@ -887,12 +885,12 @@ var Table = TablePublic.extend({
 				//庄下线继续当庄
 				continue;
 			}
-			if (!this.userList[k].isConnect) {
-				if (this.userList[k].is_robot) {
+			if (!logicApp.uidUserMapping[k].isConnect) {
+				if (logicApp.uidUserMapping[k].is_robot) {
 					this.roborCount--;
 				}
-				this.userList[k].closeSocket();
-				this.userList[k] = null;
+				logicApp.uidUserMapping[k].closeSocket();
+				logicApp.uidUserMapping[k] = null;
 			}
 		}
 		for (var i = 0; i < this.zhuang_queue.length; i++) {
@@ -900,11 +898,11 @@ var Table = TablePublic.extend({
 				continue;
 			}
 			var info = this.zhuang_queue[i];
-			if (!F.isset(this.userList[info.uid])) {
+			if (!F.isset(logicApp.uidUserMapping[info.uid])) {
 				this.zhuang_queue[i] = null;
 			}
 		};
-		this.userList = utils.clearUpHash(this.userList);
+		logicApp.uidUserMapping = utils.clearUpHash(logicApp.uidUserMapping);
 		this.zhuang_queue = utils.clearUpArray(this.zhuang_queue);
 	},
 	checkIfXiaZhuang : function() {
@@ -916,7 +914,7 @@ var Table = TablePublic.extend({
 			return 3;
 		}
 		
-		this_user = this.userList[this.zhuang_uid];
+		this_user = logicApp.uidUserMapping[this.zhuang_uid];
 
 		//机器人坐庄
 		if (this_user.is_robot) {
@@ -945,11 +943,11 @@ var Table = TablePublic.extend({
 		if (this.zhuang_queue.length>0) {
 			var thisQueue = this.zhuang_queue.shift();
 			logger.info("get new queue zhuang uid as",thisQueue);
-			if (!F.isset(this.userList[thisQueue.uid]) || this.userList[thisQueue.uid].isConnect==false) {
+			if (!F.isset(logicApp.uidUserMapping[thisQueue.uid]) || logicApp.uidUserMapping[thisQueue.uid].isConnect==false) {
 				this.doGetNextZhuang();
 				return;
 			}
-			var this_user = this.userList[thisQueue.uid];
+			var this_user = logicApp.uidUserMapping[thisQueue.uid];
 			if (this_user.userInfo.credits < this.roomConfig.room_zhuang_limit_low){
 				//钱不够,跳过
 				this.doGetNextZhuang();
@@ -969,8 +967,8 @@ var Table = TablePublic.extend({
 	doChangeZhuang : function(uid) {
 		logger.info("change zhuang!!!!= uid as",uid);
 		this.zhuang_uid = uid;
-		if (F.isset(this.userList[uid]) && uid!=0){
-			this.zhuang_user_info = this.userList[uid].userInfo;
+		if (F.isset(logicApp.uidUserMapping[uid]) && uid!=0){
+			this.zhuang_user_info = logicApp.uidUserMapping[uid].userInfo;
 			this.zhuang_user_info.counter = 0;
 		} else {
 			this.zhuang_user_info = {counter:0};

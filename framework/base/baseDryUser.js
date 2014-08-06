@@ -1,17 +1,17 @@
 var BaseDryUser = Class.extend({
 	init : function(lobbyId,rpcSession) {
 		this.lobbyId = lobbyId;
-		this.socket = rpcSession;
+		this.rpcSession = rpcSession;
 		this.isConnect = true;
-		this.isLogined = false;
 		this.uid = 0;
 		this.userInfo = null;
 	},
 	onCloseSocket: function() {
 		this.isConnect = false;
+		this.rpcSession = null;
 	},
 	send : function(category,method,ret,packetId,data) {
-		if (this.isConnect==false || !F.isset(this.socket)){
+		if (this.isConnect==false || !F.isset(this.rpcSession)){
 			logger.error("not connect!!");
 			return;
 		}
@@ -20,7 +20,7 @@ var BaseDryUser = Class.extend({
 			data.uid = this.uid;
 		}
 		var packet = {'c':category,'m':method,'d':data,'t':ts,'s':packetId,'r':ret};
-		this.socket.send(JSON.stringify(packet));
+		this.rpcSession.directSend(packet);
 	},
 	sendErr : function(errorId,errorInfo,packetId) {
 		if (typeof(packetId)=="undefined" || packetId===null) {
@@ -45,16 +45,15 @@ var BaseDryUser = Class.extend({
 		}
 		
 		this.closeSocket();
-		this.isConnect = false;
 		//kick 后并不立刻删除本对象，只是置为不连接。
 		//因为 table 中可能这个用户对象还在使用，在 table 本局结束后再遍历所有 null 的对象，等待 GC 回收内存。
 		
 	},
 	closeSocket : function(){
-		if (this.socket) {
-			this.socket.close();
-			this.socket = null;
+		if (this.rpcSession) {
+			this.rpcSession.close();
 		}
+		this.onCloseSocket();
 	},
 	getUserShowInfo : function() {
 		if (!F.isset(this.userInfo)){

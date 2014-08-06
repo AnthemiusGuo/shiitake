@@ -2,10 +2,9 @@ var GameServer = require('app/base/game');
 var ZhaServer = GameServer.extend({
 	init : function(typ,id,info) {
 		this._super(typ,id,info);
-		
+		this.GAME_ID = 1;
 		this.roomId = info.roomId;
 		this.tables = {};
-		this.onlineUsers = {};
 		var roomConfigs = require('app/config/zha');
 		this.tableConfig = roomConfigs.servers[this.id];
 		this.roomConfig = roomConfigs.rooms["zha-room-"+this.tableConfig.roomId];
@@ -90,15 +89,30 @@ var ZhaServer = GameServer.extend({
 		this.tables[tableId] = null;
 		this.tableCounter--;
 	},
-	joinTable : function(tableId,userSession){
-		this.onlineUsers[userSession.uid] = userSession;
-		userSession.joinTable(this.tables[tableId]);
-		this.tables[tableId].onJoinTable(userSession);
+	doJoinTable : function(uid,tableId){
+		if (!F.isset(this.uidUserMapping[uid])){
+			return [-100,{e:'user not login to game'}];
+		}
+		var user = this.uidUserMapping[uid];
+		return this.tables[tableId].onJoinTable(user);
+	},
+	doLeaveTable : function(uid,tableId){
+		if (!F.isset(this.uidUserMapping[uid])){
+			return [-100,{e:'user not login to game'}];
+		}
+		var user = this.uidUserMapping[uid];
+		return this.tables[tableId].onLeaveTable(user);
 	},
 	checkCanEnterGame : function(data) {
 		//用户钱够不
 		// this.roomConfig
 		return [1,""];
+	},
+	genEnterGameAck : function(uid) {
+		//如果用户还在比赛当中，返回对应tableid
+		//否则返回tableid 0
+		//TODO
+		return {tableId:0,roomId:this.roomId,gameId:this.GAME_ID};
 	}
 
 });

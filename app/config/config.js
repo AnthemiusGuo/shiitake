@@ -22,6 +22,11 @@ config.upstreamUrl = {
 	url:""
 }
 
+config.GAME_IDS = {
+	"zha":1,
+	"yao":2
+}
+
 config.gameIdToServer = {
 	1 : "zha",
 	2 : "yao"

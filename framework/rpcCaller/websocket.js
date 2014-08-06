@@ -55,12 +55,12 @@ var WebSocketRPC = RpcCaller.extend({
 			    var reqId = msg.s;
 			    if (F.isset(self.requestQueue[reqId])) {
 			    	//{'c':category,'m':method,'d':data,'t':ts,'s':reqId,'r':0};
-			    	self.requestQueue[reqId].cb(msg.r,msg.d,self.requestQueue[reqId]);
+			    	self.requestQueue[reqId].cb(msg.c,msg.m,msg.r,msg.d,self.requestQueue[reqId]);
 			    	clearTimeout(self.requestQueue[reqId].timeoutTick);
 			    	self.requestQueue[reqId].timeoutTick = null;
 			    	self.requestQueue[reqId] = null;
 			    } else {
-			    	self.onMsgAck(msg.r,msg.d,msg);
+			    	self.onMsgAck(msg.c,msg.m,msg.r,msg.d,msg);
 			    }
 			}).on('close',function(){
 				self.allServers[k].connected = false;
@@ -71,12 +71,13 @@ var WebSocketRPC = RpcCaller.extend({
 				//然后
 				rpc.checkRPCReady();
 				if (rpc.allReady==false && self.rpcMustConnect) {
-					logicApp.onPause();	
+					logicApp.onPause({t:'rpcClose',sT:self.typ,sId:k});	
 				}
+
 			}).on('error',function(err){
 				self.allServers[k].connected = false;
 				self.allServers[k].ready = false;
-				logger.error(err);
+				logger.info("connect failed for "+k);
 			});
 		} catch(err) {
 			this.allServers[k].connected = false;
@@ -140,16 +141,16 @@ var WebSocketRPC = RpcCaller.extend({
 			//寻找服务器
 			var thisServer = this.findServer(id);
 			if (thisServer==null) {
-				cb(-1001,"没有找到合适的服务器路由",req);
+				cb(req.category,req.method,-1001,"没有找到合适的服务器路由",req);
 				return;
 			}
 			if (thisServer.connected==false){
-				cb(-1000,"服务器尚未链接",req);
+				cb(req.category,req.method,-1000,"服务器尚未链接",req);
 				return;
 			}
 			if (method!= "login" && method!="ping") {
 				if (thisServer.ready==false) {
-					cb(-999,"服务器尚未准备好",req);
+					cb(req.category,req.method,-999,"服务器尚未准备好",req);
 					self.requestQueue[reqId] = null;
 	  				return;
 				}
@@ -159,7 +160,7 @@ var WebSocketRPC = RpcCaller.extend({
 	    		// if error is null, the send has been completed,
 	    		// otherwise the error object will indicate what failed.
 	    		if (error!=null) {
-	    			cb(-998,"服务器发送失败",req);
+	    			cb(req.category,req.method,-998,"服务器发送失败",req);
 					self.requestQueue[reqId] = null;
 	  				return;
 	    		}
@@ -187,10 +188,10 @@ var WebSocketRPC = RpcCaller.extend({
 		req.timeoutTick = null;
 		this.requestQueue[reqId] = null;
 	},
-	onMsgAck: function(ret,data,req) {
-		logger.debug("unkown package!",ret,req,data);
+	onMsgAck: function(category,method,ret,data,req) {
+		logger.error("unhandled rpc response package!",category,method,ret,data);
 	},
-	onLoginAck: function(ret,data,req) {
+	onLoginAck: function(category,method,ret,data,req) {
 
 		if (ret>0) {
 			var id = req.params.serverId;
@@ -198,11 +199,11 @@ var WebSocketRPC = RpcCaller.extend({
 			this.allServers[id].ready = true;
 			setTimeout(this.ping.bind(this),300000);
 		} else {
-			logger.error("login socket rpc server failed for "+req.params.typ+"/"+req.params.id);
+			logger.error("login socket rpc server failed for "+req.params.typ+"/"+req.params.id,category,method);
 			logger.error("error code "+ret);
 		}
 	},
-	onPong : function(ret,data,req) {
+	onPong : function(category,method,ret,data,req) {
 		var id = req.params.serverId;
 		if (ret>0) {
 			

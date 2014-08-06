@@ -112,6 +112,7 @@ function recvLog(typ,msg) {
 }
 
 function sendGame(category,method,data) {
+	data.gameId = GAME_ID;
 	sendLobby(category,method,data) ;
 	// var dd = new Date();
 	// var ts = dd.getTime();
@@ -138,10 +139,7 @@ User.prototype.onUserMsg_roomListNot = function(category,method,data,ts,packetId
 	sendGame('game','enterGameReq',{roomId:10,gameId:GAME_ID})
 }
 
-User.prototype.onGameMsg_enterGameAck = function(category,method,data,ts,packetId,ret) {
-	consoleLog("lobby","logined!");
-	sendGame('zha','joinTableReq',{prefer:0})
-}
+
 User.prototype.onUserMsg_unknown = function(category,method,data,ts,packetId,ret) {
 	consoleLog("lobby","unkonwn package!!!");
 }
@@ -274,6 +272,11 @@ Game.prototype.onGameMsg_joinTableAck = function(category,method,data,ts,packetI
 Game.prototype.onGameMsg_unknown = function(category,method,data,ts,packetId,ret) {
 	consoleLog("game","unkonwn package!!!");
 }
+Game.prototype.onGameMsg_enterGameAck = function(category,method,data,ts,packetId,ret) {
+	consoleLog("game","enter Game!");
+	sendGame('game','joinTableReq',{gameId:GAME_ID,prefer:data.tableId})
+}
+
 
 user = new User(uid);
 table = new Table(1);
@@ -319,7 +322,7 @@ $.getJSON(webUrl+"?m=user&a=login&uid="+uid,function(json){
 			}
 		} else if (msg.c == "game") {
 			if (typeof(game["onGameMsg_"+msg.m])=="undefined") {
-				game.onMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
+				game.onGameMsg_unknown(msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
 			} else {
 				game["onGameMsg_"+msg.m](msg.c,msg.m,msg.d,msg.t,msg.s,msg.r);
 			}

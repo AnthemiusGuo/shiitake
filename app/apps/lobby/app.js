@@ -154,9 +154,16 @@ var LobbyServer = BaseServer.extend({
         }
 
         //拿到找到的服务器
-        rpc.call("zha","game","enterGameReq",{serverId:targetServerId},{uid:userSession.uid,lobbyId:this.id},function(ret,data,req){
+        rpc.call("zha","game","enterGameReq",{serverId:targetServerId},{uid:userSession.uid,lobbyId:this.id,userInfo:userSession.getSendToGameInfo()},function(category,method,ret,data,req){
             //登录回调
-            logger.info("enterGameReq",ret,data,req);
+            if (ret >0) {
+                userSession.gameId = config.GAME_IDS.zha;
+                userSession.roomId = data.roomId;
+                userSession.gameServerId = targetServerId;
+                userSession.send("game","enterGameAck",1,packetSerId,data);
+            } else {
+                userSession.send("game","enterGameAck",-1,packetSerId,data);
+            }
         }.bind(this));
     }
 });
