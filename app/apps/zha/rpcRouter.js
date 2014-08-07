@@ -8,7 +8,7 @@ var RPCRouter = BaseRPCRouter.extend({
 	on_msg_game_joinTableReq : function(clientSession,ret,ts,data,packetSerId) {
 		//{"c":"user","m":"login","d":{"uid":1},"t":1404292893355,"s":0,"r":1}
 		if (!utils.checkParam(data,["prefer","uid"])) {
-			userSession.sendErrPackFormat(packetSerId);
+			clientSession.sendErrPackFormat(packetSerId);
 			return;
 		}
 		
@@ -23,50 +23,51 @@ var RPCRouter = BaseRPCRouter.extend({
 		clientSession.send("game","joinTableAck",ret[0],packetSerId,ret[1]);
 
 	},
-	betReq : function(userSession,ret,ts,data,packetSerId) {
+	on_msg_game_betReq : function(clientSession,ret,ts,data,packetSerId) {
 		//{"c":"user","m":"login","d":{"uid":1},"t":1404292893355,"s":0,"r":1}
-		if (!utils.checkParam(data,["men","point"])) {
-			userSession.sendErrPackFormat(packetSerId);
-			return;
-		}
-		
-		if (!F.isset(userSession.table)){
-			userSession.sendErrPackFormat(packetSerId);
-			return;
-		}
-		if (!F.isset(userSession.uid) || userSession.uid<=0){
-			userSession.sendErrPackFormat(packetSerId);
+		if (!utils.checkParam(data,["men","point","uid"])) {
+			clientSession.sendErrPackFormat(packetSerId);
 			return;
 		}
 
-		if (!F.isset(userSession.table.userList[userSession.uid])){
-			userSession.sendErrPackFormat(packetSerId);
+		var uid = data.uid;
+
+		if (!F.isset(logicApp.uidUserMapping[uid])){
+			clientSession.sendErr(-1000,"您尚未登录游戏服务器",packetSerId);
 			return;
 		}
 
-		userSession.table.onBet(userSession.uid,data.men,data.point,packetSerId);
+		var user = logicApp.uidUserMapping[uid];
+		var tableId = user.tableId;
+
+		logger.info("user.tableId",tableId);
+
+		if (tableId==0 || !F.isset(logicApp.tables[user.tableId].userList[uid])){
+			clientSession.sendErr(-1000,"您尚未加入任何牌桌",packetSerId);
+			return;
+		}
+		var ret = logicApp.tables[tableId].onBet(uid,data.men,data.point);
+		clientSession.send("table","betAck",ret[0],packetSerId,ret[1]);
 	},
-	askZhuangReq : function(userSession,ret,ts,data,packetSerId) {
-		// if (!utils.checkParam(data,["men","point"])) {
-		// 	userSession.sendErrPackFormat(packetSerId);
-		// 	return;
-		// }
-		
-		if (!F.isset(userSession.table)){
-			userSession.sendErrPackFormat(packetSerId);
-			return;
-		}
-		if (!F.isset(userSession.uid) || userSession.uid<=0){
-			userSession.sendErrPackFormat(packetSerId);
+	on_msg_game_askZhuangReq : function(clientSession,ret,ts,data,packetSerId) {
+		var uid = data.uid;
+
+		if (!F.isset(logicApp.uidUserMapping[uid])){
+			clientSession.sendErr(-1000,"您尚未登录游戏服务器",packetSerId);
 			return;
 		}
 
-		if (!F.isset(userSession.table.userList[userSession.uid])){
-			userSession.sendErrPackFormat(packetSerId);
+		var user = logicApp.uidUserMapping[uid];
+		var tableId = user.tableId;
+
+		logger.info("user.tableId",tableId);
+
+		if (tableId==0 || !F.isset(logicApp.tables[user.tableId].userList[uid])){
+			clientSession.sendErr(-1000,"您尚未加入任何牌桌",packetSerId);
 			return;
 		}
-
-		userSession.table.onAskZhuang(userSession.uid,data,packetSerId);
+		var ret = logicApp.tables[tableId].onAskZhuang(uid,data);
+		clientSession.send("table","askZhuangAck",ret[0],packetSerId,ret[1]);
 	}
 });
 module.exports = RPCRouter;

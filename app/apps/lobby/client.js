@@ -39,6 +39,9 @@ var LobbyClient = BaseClient.extend({
 			//返回错误信息
 			return {
 				uid : this.userInfo.uid,
+				uname : '[未知]',
+				avatar_url : '',
+				avatar_id : 0,
 				credits : 0,
 				total_credits : 0,
 				level : 0,
@@ -50,6 +53,9 @@ var LobbyClient = BaseClient.extend({
 		}
 		return {
 			uid : this.userInfo.uid,
+			uname : this.userInfo.uname,
+			avatar_url : this.userInfo.avatar_url,
+			avatar_id : this.userInfo.avatar_id,
 			credits : this.userInfo.credits,
 			total_credits : this.userInfo.total_credits,
 			level : this.userInfo.level,

@@ -6,6 +6,7 @@ var BaseClient = Class.extend({
 		this.uid = 0;
 		this.supportZipSignal = false;
 		this.userInfo = null;
+		this.gameId = 0;
 	},
 	onCloseSocket: function() {
 		this.isConnect = false;

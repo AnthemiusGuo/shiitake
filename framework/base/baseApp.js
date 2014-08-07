@@ -133,6 +133,9 @@ var BaseApp = Class.extend({
 		userSession.isLogined = true;
 		userSession.id = typ+"/"+id;
 		userSession.serverId = typ+"/"+id;
+		if (F.isset(config.GAME_IDS[typ])) {
+			userSession.gameId = config.GAME_IDS[typ];
+		}
 		userSession.send("rpc","loginAck",1,packetId,{});
 	},
 	rpc_ping : function(typ,id,data) {

@@ -60,13 +60,15 @@ var UserRouter = BaseUserRouter.extend({
 			userSession.sendErr(-1000,"您尚未登录游戏服务器",packetSerId);
 			return;
 		}
+		var gameId = data.gameId;
 		//基本校验之后，直接转发到游戏服务器
 		data.uid = userSession.uid;
 
-		rpc.call(config.gameIdToServer[data.gameId],"game",method,{serverId:userSession.gameServerId},data,function(category,method,ret,data,req){
+		rpc.call(config.gameIdToServer[gameId],"game",method,{serverId:userSession.gameServerId},data,function(category,method,ret,data,req){
 			if (F.isset(this["handle_data_"+category+"_"+method])){
 				data = this["handle_data_"+category+"_"+method](data);
 			}
+			data.gameId = gameId;
 			userSession.send(category,method,ret,packetSerId,data);
 
 			logger.info("transfer req to game server",ret,data);
@@ -90,27 +92,19 @@ var UserRouter = BaseUserRouter.extend({
 		}
 		//基本校验之后，直接转发到游戏服务器
 		data.uid = userSession.uid;
-		
-		rpc.call(config.gameIdToServer[data.gameId],"game",method,{serverId:userSession.gameServerId},data,function(category,method,ret,data,req){
+		var gameId = data.gameId;
+
+		rpc.call(config.gameIdToServer[gameId],"game",method,{serverId:userSession.gameServerId},data,function(category,method,ret,data,req){
 			//有的rpc 数据只返回 uid，但是实际需要 userInfo
-			if (F.isset(this["handle_data_"+category+"_"+method])){
-				data = this["handle_data_"+category+"_"+method](data);
-			}
+			// if (F.isset(this["handle_data_"+category+"_"+method])){
+			// 	data = this["handle_data_"+category+"_"+method](data);
+			// }
+			//上面邏輯拿掉了，因爲會涉及userlist內非自己lobby的用戶的數據同步問題
+			data.gameId = gameId;
 			userSession.send(category,method,ret,packetSerId,data);
 			logger.info("transfer req to game server",ret,data);
 		});
 		
 	},
-	handle_data_game_joinTableAck:function(data) {
-		//覆盖在线用户列表
-		for (var uid in data.usersIn){
-			if (!F.isset(logicApp.uidUserMapping[uid])) {
-				data.usersIn[uid] = null;
-				continue;
-			}
-			data.usersIn[uid] =  logicApp.uidUserMapping[uid].getUserShowInfo();
-		}
-		return data;
-	}
 });
 module.exports = UserRouter;

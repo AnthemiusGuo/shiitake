@@ -85,7 +85,7 @@ var GameServer = BaseServer.extend({
 		user.is_robot = (data.userInfo.is_robot==1);
 		user.onGetUserInfo();
 
-		user.send("user","enterGameAck",1,packetSerId,this.genEnterGameAck(uid));
+		user.send("game","enterGameAck",1,packetSerId,this.genEnterGameAck(uid));
 	},
 	checkCanEnterGame : function(data) {
 		utils.PLEASE_OVERWRITE_ME();

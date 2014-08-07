@@ -1,4 +1,4 @@
-var BaseServer = require('framework/base/baseApp');
+var BaseServer = require('framework/base/baseConnectorServer');
 //机器人为请求式, 加入等请求为游戏发起, 机器人设置不同类型
 var RobotServer = BaseServer.extend({
 	init : function(typ,id,info) {
@@ -16,7 +16,7 @@ var RobotServer = BaseServer.extend({
 			dir = 'app/apps/robot/baseRobot';
 			global.Robot = require(dir);
 		}
-        this.realServers = config.servers['zha'].serverList;
+        this.realServers = config.servers[this.for].serverList;
 	},
 	prepare : function() {
 		//它注册别人RPC和自己的机器人无关, 但是处理别人的RPC login时候,需要重载下, 必须自己服务器初始化完成了才允许其他rpc调用接入

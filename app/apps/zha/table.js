@@ -506,6 +506,7 @@ var Table = TablePublic.extend({
 	    var zhuang_exp = 0;
 
 	    this.uidChanged = {};
+	    this.allUserChanges = {};
 	    logger.debug("this.user_bet_info:",this.user_bet_info);
 
 	    var analyser = {
@@ -524,7 +525,7 @@ var Table = TablePublic.extend({
 	            user_get[uid] = 0;
 	        }
 	        if (!F.isset(user_result[uid])){
-	            user_result[uid] = {'cc':[0,0,0,0],'r':0,'c':0};
+	            user_result[uid] = {'cc':[0,0,0,0],'c':0,'get_exp':0};
 	        }
 	        for (var men in bets) {
 	        	var point = bets[men];
@@ -557,6 +558,17 @@ var Table = TablePublic.extend({
 	            }
 	        }
 	        this.uidChanged[uid]=0;
+	        //收入要剪掉抽水
+	        if (user_get[uid]>0){
+	            var real_credits = Math.round(user_get[uid]*(1-room_water_ratio));
+	            var exp = (user_get[uid] - real_credits);
+	            
+	        } else {
+	        	var real_credits = user_get[uid];
+	        	var exp = 0;
+	        }
+	        user_result[uid]['c'] = real_credits;
+			user_result[uid]['get_exp'] = exp;
 	    }
 
 	    //用户总收益, 用于统计分析
@@ -579,18 +591,28 @@ var Table = TablePublic.extend({
 		} 
 
 		analyser.zhuangWin += zhuang_get;
-		if (this.zhuang_uid==0) {
-			//系统坐庄，钱输赢都是系统的，统计系统输赢
-			analyser.sysWin += zhuang_get;
-		}
+		
 
 		var zhuang_result_send = {};
 		zhuang_result_send['c'] = zhuang_credits;
 		zhuang_result_send['get_exp'] = zhuang_exp;
 		zhuang_result_send['cc'] = zhuang_result;
 
+		if (this.zhuang_uid==0) {
+			//系统坐庄，钱输赢都是系统的，统计系统输赢
+			analyser.sysWin += zhuang_get;
+		}
 
 		if (this.zhuang_uid!=0){
+			user_result[this.zhuang_uid] = zhuang_result_send;
+		}
+
+		//rpc 通知所有人開牌，
+		//rpc 通知lobby寫回數據並開牌
+		this.doBroadcast("table","OpenNot",{zhuang:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
+
+		this.doRpcToMultiLobbies("user","batchUpdate",Object.keys(this.user_result),)
+
 			var this_user = null;
 			//不是系统坐庄,写回数据
 			if (F.isset(logicApp.uidUserMapping[this.zhuang_uid].userInfo)  && logicApp.uidUserMapping[this.zhuang_uid].isConnect) {
@@ -713,8 +735,9 @@ var Table = TablePublic.extend({
 	    logger.debug(user_result);
 	    
 
+
 	},
-	onBet : function(uid,men,point,packetSerId){
+	onBet : function(uid,men,point){
 		logger.info("onBet",uid,men,point);
 
 		if (!F.isset(logicApp.uidUserMapping[uid])){
@@ -725,26 +748,22 @@ var Table = TablePublic.extend({
 		var userSession = logicApp.uidUserMapping[uid];
 		if (this.canBet==false) {
 			logger.error("this.canBet");
-			userSession.sendAckErr("table","betAck",-100,"当前牌桌不是下注阶段哦",packetSerId);
-			return;
+			return [-100,{e:"当前牌桌不是下注阶段哦"}];
 		}
 		if (this.zhuang_uid==uid) {
 			logger.error("is zhuang");
-			userSession.sendAckErr("table","betAck",-103,"您是庄家,不能下注",packetSerId);
-			return;
+			return [-103,{e:"您是庄家,不能下注"}];
 		}
 
 		if (this.thisRoundFull) {
 			logger.error("this.thisRoundFull");
-			userSession.sendAckErr("table","betAck",-101,"这一轮全桌压注总额已经满了哦,等下一轮吧",packetSerId);
-			return;
+			return [-101,{e:"这一轮全桌压注总额已经满了哦,等下一轮吧"}];
 		}
 
 		logger.debug("userSession.credits",userSession.credits);
 		if (userSession.credits < point*10) {
 			logger.error("userSession.credits < point",userSession.credits,point);
-			userSession.sendAckErr("table","betAck",-102,"您需要保持您手头的钱数大于下注额的十倍哦",packetSerId);
-			return;
+			return [-102,{e:"您需要保持您手头的钱数大于下注额的十倍哦"}];
 		}
 
 		if (userSession.matchId_has_bet != this.matchId){
@@ -761,8 +780,7 @@ var Table = TablePublic.extend({
 			if (Math.floor(this.user_bet_total+point)>Math.floor(this.zhuang_user_info.credits/10)) {
 		    	//停止压注
 		    	this.thisRoundFull = true;
-		    	userSession.sendAckErr("table","betAck",-101,"这一轮全桌压注总额已经满了哦,等下一轮吧",packetSerId);
-		        return
+		    	return [-101,{e:"这一轮全桌压注总额已经满了哦,等下一轮吧"}];
 		    }
 		}
 	    
@@ -780,7 +798,7 @@ var Table = TablePublic.extend({
 			}
 		}
 		//category,method,ret,packetId,data
-		userSession.send("table","betAck",1,packetSerId,{total_bet_info:this.bet_info,my_bet_info:userSession.bet_info});
+		return [1,{total_bet_info:this.bet_info,my_bet_info:userSession.bet_info}];
 	},
 	onJoinTable : function(user) {
 		logger.debug("user "+user.uid+" join the table");
@@ -800,12 +818,14 @@ var Table = TablePublic.extend({
 			return [-102,{e:'您的游戏币过高',room_limit_high:this.roomConfig.room_limit_high}];			
 		}
 
+		this.doOptBroadcast("table","joinNot",{uid:uid,userInfo:user.getUserShowInfo()});
+
 		var uid = user.uid;
 		this.userList[uid] = 1;
 
 		this.userCounter = Object.keys(this.userList).length;
 
-		if (this.state=="init") {
+		if (this.state=="init" && ) {
 			//第一个进桌的驱动这个桌子开始跑循环
 			this.begin();
 		}
@@ -815,26 +835,26 @@ var Table = TablePublic.extend({
 			if (this.userList[k]==null) {
 				continue;
 			}
-			allUsersInfo[k] = {uid:k};
+			allUsersInfo[k] = logicApp.uidUserMapping[k].getUserShowInfo();
 		}
 		
-		this.doOptBroadcast("table","joinNot",{uid:uid});
 		var now = new Date().getTime();
-		if (this.state !="AfterOpen") {
-			var cd = Math.ceil((now -  this.stateTime)/1000);
-			this.doSinglecast(uid,"table",this.state+"Not",{cd:this.stateConfig[this.state].timer-cd});
-		} else {
-			var cd = Math.ceil((now -  this.stateTime)/1000);
-			this.doSinglecast(uid,"table","OpenNot",{zhuang:this.zhuang_result_send,r:this.openResult,cd:this.stateConfig[this.state].timer-cd});
+		var tableStatus = {};
+		var cd = Math.ceil((now -  this.stateTime)/1000);
+		tableStatus = {state:this.state,cd:this.stateConfig[this.state].timer-cd};
+
+		if (this.state =="AfterOpen") {
+			tableStatus.zhuang = this.zhuang_result_send;
+			tableStatus.r  = this.openResult;
 		}
 
 		if (user.is_robot) {
 			this.roborCount++;
 		}
 		user.tableId = this.tableId;
-		return [1,{tableId:this.tableId,usersIn:allUsersInfo,userZhuang:this.userZhuang}];
+		return [1,{tableId:this.tableId,usersIn:allUsersInfo,userZhuang:this.userZhuang,tableStatus:tableStatus}];
 	},
-	onAskZhuang : function(uid,data,packetSerId) {
+	onAskZhuang : function(uid,data) {
 		var now = new Date().getTime();
 		if (!F.isset(logicApp.uidUserMapping[uid])){
 			//no this user
@@ -844,35 +864,23 @@ var Table = TablePublic.extend({
 		var userSession = logicApp.uidUserMapping[uid];
 		if (!this.userZhuang) {
 			//不允许用户当庄
-			userSession.sendAckErr("table","askZhuangAck",-100,"这个房间不允许用户坐庄",packetSerId);
-			return;
+			return [-100,{e:'这个房间不允许用户坐庄'}];		
 		}
-		var credits = userSession.userInfo.credits;
-		if (credits < this.roomConfig.room_zhuang_limit_low) {
-			userSession.sendAckErr("table","askZhuangAck",-102,"您的游戏币不足",packetSerId);
-			return;
-		}
-		if (credits > this.roomConfig.room_zhuang_limit_high) {
-			userSession.sendAckErr("table","askZhuangAck",-103,"您的游戏币过高",packetSerId);
-			return;
-		}
-
 		for (var i = 0; i < this.zhuang_queue.length; i++) {
 			if (this.zhuang_queue[i].uid==uid){
-				userSession.sendAckErr("table","askZhuangAck",-101,"您已经报名成功",packetSerId);
-				return;
+				return [-101,{e:'您已经报名成功'}];
 			}
 		};
-		var userSession = logicApp.uidUserMapping[uid];
-		//检查允许上庄情况
-		if (userSession.userInfo.credits < this.roomConfig.room_zhuang_limit_low){
-			//钱不够,跳过
-			userSession.sendAckErr("table","askZhuangAck",-102,"您的余额不足,不可上庄",packetSerId);
-			return;
+		var credits = userSession.userInfo.credits;
+		if (this.roomConfig.room_zhuang_limit_low>0 && credits < this.roomConfig.room_zhuang_limit_low) {
+			return [-102,{e:'您的游戏币不足',room_zhuang_limit_low:this.roomConfig.room_zhuang_limit_low}];		
+		}
+		if (this.roomConfig.room_zhuang_limit_high>0 && credits > this.roomConfig.room_zhuang_limit_high) {
+			return [-103,{e:'您的游戏币过高',room_zhuang_limit_high:this.roomConfig.room_zhuang_limit_high}];	
 		}
 
 		this.zhuang_queue.push({time:now,uid:uid});
-		userSession.send("game","askZhuangAck",1,0);
+		return [1,{}];	
 	},
 	arrange_user_list: function(){
 		//清理内存

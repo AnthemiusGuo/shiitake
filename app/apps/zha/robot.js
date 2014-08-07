@@ -9,6 +9,7 @@ var ZhaRobot = BaseRobot.extend({
 		this.tableId = 0;
 		this.onBet = false;
 		this.betCounter = 0;
+
 	},
 	initCredits : function(){
 
@@ -39,10 +40,10 @@ var ZhaRobot = BaseRobot.extend({
         }
 
 	},
-	onMsg : function(category,method,data,ts,r,seqId){
+	onMsg : function(category,method,r,data){
 		logger.info(category,method,data);
 	},
-	onMsg_user_loginAck : function(data,ts,r,seqId){
+	onMsg_game_enterGameAck : function(r,data){
 		if (r>0) {
 			this.betCounter = 0;
 			this.call('game','joinTableReq',{prefer:this.tableId})
@@ -53,7 +54,7 @@ var ZhaRobot = BaseRobot.extend({
 		}
 		
 	},
-	onMsg_game_joinTableAck : function(data,ts,r,seqId){
+	onMsg_game_joinTableAck : function(r,data){
 		if (this.onTableTyp=="zhuang") {
 			//莊的話，發個要求上莊排隊
 			this.call('table','askZhuangReq',{})
@@ -64,17 +65,17 @@ var ZhaRobot = BaseRobot.extend({
 		
 		logger.info(data);
 	},
-	onMsg_table_StartNot : function(data,ts,r,seqId){
+	onMsg_table_StartNot : function(r,data){
 		if (this.betCounter > F.rand(3,7)) {
 			//离开
 			logger.info("Robot will leave now!!! as ",this.uid);
 			this.close();
 		}
 	},
-	onMsg_table_WaitOpenNot : function(data,ts,r,seqId){
+	onMsg_table_WaitOpenNot : function(r,data){
 		this.onBet = false;
 	},
-	onMsg_table_WaitBetNot : function(data,ts,r,seqId){
+	onMsg_table_WaitBetNot : function(r,data){
 		this.onBet = true;
 		if (this.onTableTyp=="zhuang") {
 			//莊的話，永遠不管
@@ -84,7 +85,7 @@ var ZhaRobot = BaseRobot.extend({
 		
 		logger.info(data);
 	},
-	onMsg_table_OpenNot : function(data,ts,r,seqId){
+	onMsg_table_OpenNot : function(r,data){
 		if (!F.isset(data.me)){
 			//和我这个机器人无关
 			return;
@@ -122,38 +123,14 @@ var ZhaRobot = BaseRobot.extend({
 	},
 	connectAndJoin : function(thisServer,tableId){
 		this.tableId = tableId;
-		var WebSocketClient = require('ws');
-		var self = this;
-		try {
-			this.socket = new WebSocketClient('ws://'+thisServer.host+':'+thisServer.clientPort);
+		this.targetServerId = thisServer.id;
 
-			this.socket.on('open', function() {
-				logger.info("websocket server "+thisServer.id+" connect!!!");
-				self.connected = true;
-				self.call('user','loginReq',{uid:self.uid,ticket:self.ticket});
-			}).on('message', function(data, flags) {
-			    var msg = JSON.parse(data);
-			    if (F.isset(self['onMsg_'+msg.c+"_"+msg.m])){
-			    	self['onMsg_'+msg.c+"_"+msg.m](msg.d,msg.t,msg.r,msg.s);
-			    } else {
-			    	self.onMsg(msg.c,msg.m,msg.d,msg.t,msg.r,msg.s);
-			    }
-			    
-			}).on('close',function(){
-				self.connected = false;
-				self.ready = false;
-			}).on('error',function(err){
-				self.connected = false;
-				self.ready = false;
-				logger.error(err);
-			});
-		} catch(err) {
-			self.connected = false;
-			self.ready = false;
-		}
+		this.call("game","enterGameReq",{lobbyId:logicApp.id,userInfo:this.getSendToGameInfo()});
 	},
+
 	close : function() {
 		this.socket.close();
+		this.targetServerId = "";
 		this.connected = false;
 		this.ready = false;
 		logicApp.reUseRobot(this.uid);

@@ -32,6 +32,10 @@ config.gameIdToServer = {
 	2 : "yao"
 }
 
+config.fakeLobbyApp = {
+	"robot" : 1
+}
+
 if (PRODUCTION==="production") {
 	config.servers = {
 	    "connector": [
@@ -56,7 +60,7 @@ if (PRODUCTION==="production") {
 	    	"rpcProtocol":"websocket",
 	    	"rpcMustConnect" : true,
 	    	"serverList" : {
-	    		"lobby-server-1":{"id":"lobby-server-1","host":"127.0.0.1","port":3001,"clientPort":3000,"frontend":true}
+	    		"lobby-server-1":{"id":"lobby-server-1","typ":"lobby","host":"127.0.0.1","port":3001,"clientPort":3000,"frontend":true}
 	    	}
 	    },
 	    //事件驱动引擎
@@ -80,7 +84,7 @@ if (PRODUCTION==="production") {
 	    		//interfaceTyp:ma, method,action模式,
 	    		//ciquery,CI框架query模式
 	    		// "main":{"id":"main","host":"127.0.0.1","url":"/yet-another-mcard-game/card/server/server.php",paramTyp:"POST",interfaceTyp:"ma"}
-	    		"main":{"id":"main","host":"127.0.0.1","url":"/shiitake/shiitake/web_demo/server.php",paramTyp:"POST",interfaceTyp:"ma"}
+	    		"main":{"id":"main","typ":"upstream","host":"127.0.0.1","url":"/shiitake/shiitake/web_demo/server.php",paramTyp:"POST",interfaceTyp:"ma"}
 	    	}
 	    	
 	    },
@@ -93,7 +97,7 @@ if (PRODUCTION==="production") {
 	    	"serverList" : {
 	    		// "zha-srv-1-1":{"id":"zha-srv-1-1","host":"127.0.0.1","port":3011,"clientPort":3010,"frontend":true,"indexParam":{"roomId":1,"minEntry":1000,"maxEntry":10000}}
 	    		//cap:容量，对于本类型游戏，容量就是桌子数，开了几张桌子
-	    		"zha-srv-1-1":{"id":"zha-srv-1-1","host":"127.0.0.1","port":3011,"frontend":false,"cap":50,"roomId":10}
+	    		"zha-srv-1-1":{"id":"zha-srv-1-1","typ":"zha","host":"127.0.0.1","port":3011,"frontend":false,"cap":50,"roomId":10}
 	    	},
 	    },
 	    // "yao":{
@@ -111,7 +115,7 @@ if (PRODUCTION==="production") {
 	    	"rpcProtocol":"websocket",
 	    	"serverList" : {
 	    	//for关键字
-	    		"robot-server-zha":{"id":"robot-server-zha","host":"127.0.0.1","port":3031,"clientPort":3030,"frontend":false,"for":"zha"}
+	    		"robot-server-zha":{"id":"robot-server-zha","typ":"robot","host":"127.0.0.1","port":3031,"clientPort":3030,"frontend":false,"for":"zha"}
 	    	}
 	    	
 	    },
@@ -129,7 +133,7 @@ if (PRODUCTION==="production") {
 	    	"rpcMode":"game",
 	    	"rpcProtocol":"none",//无RPC调用提供
 	    	"serverList" : {
-	    		"samples2-server-1":{"id":"samples2-server-1","host":"127.0.0.1","clientPort":3030,"frontend":true}
+	    		"samples2-server-1":{"id":"samples2-server-1","typ":"samples2","host":"127.0.0.1","clientPort":3030,"frontend":true}
 	    	}
 	    	
 	    },

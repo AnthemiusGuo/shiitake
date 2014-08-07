@@ -43,6 +43,31 @@ var Table = Class.extend({
 	doSinglecast : function(uid,category,method,data) {
 		logicApp.doSinglecast(uid,category,method,data);
 	},
+	doRpcToMultiLobbies : function(category,method,uids,data) {
+
+		logger.debug("doBroadcast",category,method);
+		var targetUids = [];
+		var targetLoobies = [];
+		for (var k in uids) {
+			var uid = uids[k];
+			
+			if (this.userList[uid]==null) {
+				continue;
+			}
+			if (!F.isset(logicApp.uidUserMapping[uid])) {
+				continue;
+			}
+			if (!F.isset(logicApp.uidLobbyIdMapping[uid])) {
+				continue;
+			}
+			if (logicApp.uidUserMapping[uid].isConnect) {
+				targetUids.push(uid);
+			}
+			targetLoobies.push(logicApp.uidLobbyIdMapping[uid]);
+
+		}
+		rpc.typMulticastCall("lobby","broadcast","list",targetLoobies,{uids:targetUids,info:{c:category,m:method,d:data}})
+	},
 	arrange_user_list: function(){
 		utils.PLEASE_OVERWRITE_ME();
 	}

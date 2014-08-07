@@ -105,19 +105,15 @@ var WebSocketRPC = RpcCaller.extend({
 		utils.PLEASE_OVERWRITE_ME();
 		return null;
 	},
-	errorOnSend : function(ret,errorInfo,req){
-		logger.error(ret,errorInfo,req);
+	errorOnSend : function(category,method,ret,errorInfo,req){
+		logger.error("rpc call failed",category,method,ret,errorInfo,req);
 	},
 	callCommand : function(category,method,id,data,cb){
-		logger.info("websocket","callCommand",category,method,id,data);
+		logger.debug("websocket","callCommand",category,method,id,data);
 		this.requestId++;
 		var reqId = this.requestId;
 		var req = {reqId:reqId,category:category,method:method,id:id,params:data,cb:cb};
-		if (F.isset(cb)) {
-			this.requestQueue[reqId] = req;
-		} else {
-			cb = this.errorOnSend;
-		}
+		
 
 		var ts =  new Date().getTime();
 		var package = {'c':category,'m':method,'d':data,'t':ts,'s':reqId,'r':0};
@@ -136,31 +132,47 @@ var WebSocketRPC = RpcCaller.extend({
 				}
 				thisServer.socket.send(JSON.stringify(package));
 			}
+		} else if (id.multicast) { 
+			//組播
+			for (var k in id.serverIds) {
+				var thisServer = this.allServers[id.serverIds[k]];
+				if (thisServer.connected==false){
+					continue;
+				}
+				if (method!= "login" && method!="ping") {
+					if (thisServer.ready==false) {
+						continue;
+					}
+				}
+				thisServer.socket.send(JSON.stringify(package));
+			}
+
 		} else {
 			//单播
 			//寻找服务器
 			var thisServer = this.findServer(id);
 			if (thisServer==null) {
-				cb(req.category,req.method,-1001,"没有找到合适的服务器路由",req);
-				return;
+				return [-1001,{e:"没有找到合适的服务器路由"},req];
 			}
 			if (thisServer.connected==false){
-				cb(req.category,req.method,-1000,"服务器尚未链接",req);
-				return;
+				return [-1000,{e:"服务器尚未链接"},req];
 			}
 			if (method!= "login" && method!="ping") {
 				if (thisServer.ready==false) {
-					cb(req.category,req.method,-999,"服务器尚未准备好",req);
-					self.requestQueue[reqId] = null;
-	  				return;
+					return [-999,{e:"服务器尚未准备好"},req];
 				}
 			}
 			
+			if (F.isset(cb)) {
+				this.requestQueue[reqId] = req;
+			} else {
+				cb = this.errorOnSend;
+			}
 			thisServer.socket.send(JSON.stringify(package), function(error) {
 	    		// if error is null, the send has been completed,
 	    		// otherwise the error object will indicate what failed.
 	    		if (error!=null) {
-	    			cb(req.category,req.method,-998,"服务器发送失败",req);
+	    			cb(req.category,req.method,-998,{e:"服务器发送失败"},req);
 					self.requestQueue[reqId] = null;
 	  				return;
 	    		}
@@ -172,6 +184,7 @@ var WebSocketRPC = RpcCaller.extend({
 				},1000);
 			}
 		}
+		return([1,null,null]);
 	},
 
 	
@@ -184,7 +197,7 @@ var WebSocketRPC = RpcCaller.extend({
 	},
 	onReqTimeout : function(reqId){
 		var req = this.requestQueue[reqId];
-		req.cb(-998,"超时没有返回",req);
+		req.cb(req.category,req.method,-998,{e:"超时没有返回"},req);
 		req.timeoutTick = null;
 		this.requestQueue[reqId] = null;
 	},

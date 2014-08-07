@@ -45,7 +45,7 @@ var HTTPRPC = RpcCaller.extend({
 
 		this.requestId++;
 		var reqId = this.requestId;
-		this.requestQueue[reqId] = {reqId:reqId,category:category,method:method,id:id,params:params};
+		var req = {reqId:reqId,category:category,method:method,id:id,params:params};
 
 		//寻找服务器
 		if (!F.isset(this.allServers[category])) {
@@ -56,12 +56,11 @@ var HTTPRPC = RpcCaller.extend({
 
 		if (method!= "rpc_login" && method!="ping") {
 			if (thisServer.ready==false) {
-				cb(-999,"服务器尚未准备好",self.requestQueue[reqId]);
-				self.requestQueue[reqId] = null;
-  				return;
+				return([-999,"服务器尚未准备好",req]);
 			}
 		}
 
+		this.requestQueue[reqId] = req;
 		if (thisServer.paramTyp=="POST") {
 			var url = this._buildReqUrl(thisServer.interfaceTyp,thisServer.url,
 				category,method);
@@ -73,7 +72,7 @@ var HTTPRPC = RpcCaller.extend({
 			logger.trace("req web:"+url);
 			this.sendHttpGet(reqId,thisServer.host,url,cb);
 		}
-		
+		return([1,null,null]);
 	},
 
 	sendHttpPost : function(reqId,host,url,reqData,cb){
