@@ -135,6 +135,10 @@ var WebSocketRPC = RpcCaller.extend({
 		} else if (id.multicast) { 
 			//組播
 			for (var k in id.serverIds) {
+				logger.info("finding ",id.serverIds[k]," for ",this.typ);
+				if (!F.isset(this.allServers[id.serverIds[k]])){
+					continue;
+				}
 				var thisServer = this.allServers[id.serverIds[k]];
 				if (thisServer.connected==false){
 					continue;
@@ -144,6 +148,7 @@ var WebSocketRPC = RpcCaller.extend({
 						continue;
 					}
 				}
+				logger.info(thisServer.id,"sending msg");
 				thisServer.socket.send(JSON.stringify(package));
 			}
 

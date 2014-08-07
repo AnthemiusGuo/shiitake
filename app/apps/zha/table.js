@@ -567,7 +567,7 @@ var Table = TablePublic.extend({
 	        	var real_credits = user_get[uid];
 	        	var exp = 0;
 	        }
-	        user_result[uid]['c'] = real_credits;
+	        user_result[uid]['get_credits'] = real_credits;
 			user_result[uid]['get_exp'] = exp;
 	    }
 
@@ -594,7 +594,7 @@ var Table = TablePublic.extend({
 		
 
 		var zhuang_result_send = {};
-		zhuang_result_send['c'] = zhuang_credits;
+		zhuang_result_send['get_credits'] = zhuang_credits;
 		zhuang_result_send['get_exp'] = zhuang_exp;
 		zhuang_result_send['cc'] = zhuang_result;
 
@@ -608,119 +608,12 @@ var Table = TablePublic.extend({
 		}
 
 		//rpc 通知所有人開牌，
-		//rpc 通知lobby寫回數據並開牌
+		
 		this.doBroadcast("table","OpenNot",{zhuang:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
-
-		this.doRpcToMultiLobbies("user","batchUpdate",Object.keys(this.user_result),)
-
-			var this_user = null;
-			//不是系统坐庄,写回数据
-			if (F.isset(logicApp.uidUserMapping[this.zhuang_uid].userInfo)  && logicApp.uidUserMapping[this.zhuang_uid].isConnect) {
-				this_user = logicApp.uidUserMapping[this.zhuang_uid];
-	    		//已经有用户信息
-	    		if (this_user.is_robot) {
-		            player_win_credts += credits;
-		        }
-
-	            this_user.userInfo['exp'] += zhuang_exp;
-	            this_user.userInfo['credits'] += zhuang_credits;
-	            this_user.userInfo['total_credits'] += zhuang_credits;
-	            zhuang_result_send['r'] = this_user.userInfo['credits'];
-				//通知用户	
-				this.doSinglecast(uid,"table","OpenNot",{zhuang_me:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
-	    	}
-	    	this.uidChanged[this.zhuang_uid]=0;
-	    	//用户加经验,钱
-    		//写回用户信息
-			dmManager.setDataChange("user","BaseInfo",{uid:this.zhuang_uid},{'credits':zhuang_credits,'exp':zhuang_exp,total_credits:zhuang_credits},function(ret,data){
-				if (ret>0) {
-					//同步一下从userinfo拿出来的数据
-					if (this_user!=null) {
-						this_user.onGetUserInfo();
-					}
-					this.uidChanged[this.zhuang_uid]=1;
-					this._rpcCallUserChangeBatch();
-				} else {
-				}
-			}.bind(this));
-		}
-
-	    //根据输赢,再去发数据
-	    for (var uid in user_get){
-	    	var credits = user_get[uid];
-	    	var this_user = null;
-	    	if (!F.isset(logicApp.uidUserMapping[uid])) {
-	    		//用户未登录,这个应该是错误的状态,不应该出现
-	    		//防止出错,直接发数据库请求
-	    		var ClientUser = require('app/apps/'+appTyp+'/client');
-	    		this_user = new ClientUser(null);
-	    		this_user.isConnect = false;
-				this_user.uid = uid;
-				logicApp.uidUserMapping[uid] = this_user;
-	    	} else {
-	    		this_user = logicApp.uidUserMapping[uid];
-	    	}
-	    	if (credits>0){
-	            var real_credits = Math.round(credits*(1-room_water_ratio));
-	            var exp = (credits - real_credits);
-	            
-	        } else {
-	        	var real_credits = credits;
-	        	var exp = 0;
-	        }
-
-	    	if (F.isset(logicApp.uidUserMapping[uid].userInfo) && logicApp.uidUserMapping[uid].isConnect) {
-	    		//已经有用户信息
-	    		if (this_user.is_robot) {
-		            player_win_credts += credits;
-		        }
-
-	            this_user.userInfo['exp'] += exp;
-	            this_user.userInfo['credits'] += real_credits;
-	            this_user.userInfo['total_credits'] += real_credits;
-	            
-				//用户升级改为异步通知,不再在这里通知
-				//user_result[uid]['level'] = this_user.userInfo['level'];
-				
-				//通知用户				
-				var me_result_send = {};
-				me_result_send['c'] = real_credits;
-				me_result_send['get_exp'] = exp;
-				me_result_send['cc'] = user_result[uid]['cc'];
-				me_result_send['r'] = this_user.userInfo['credits'];
-				if (logicApp.uidUserMapping[uid]==null) {
-		    		continue;
-		    	}
-		    	this.doSinglecast(uid,"table","OpenNot",{zhuang:zhuang_result_send,me:me_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
-	    	}
-	    	//用户加经验,钱
-    		//写回用户信息
-			dmManager.setDataChange("user","BaseInfo",{uid:uid},{'credits':real_credits,'exp':exp,total_credits:real_credits},function(ret,data){
-				if (ret>0) {
-					//同步一下从userinfo拿出来的数据
-					if (this_user!=null) {
-						this_user.onGetUserInfo();
-					}
-					this.uidChanged[uid]=1;
-					this._rpcCallUserChangeBatch();
-				} else {
-				}
-			}.bind(this));
-	    }
-	    //未下注的人的广播
-	    for (var uid in logicApp.uidUserMapping){
-	    	if (F.isset(user_get[uid])) {
-	    		continue;
-	    	}
-	    	if (uid==this.zhuang_uid) {
-	    		continue;
-	    	}
-	    	if (logicApp.uidUserMapping[uid]==null) {
-	    		continue;
-	    	}
-	    	this.doSinglecast(uid,"table","OpenNot",{zhuang:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
-	    }
+		//rpc 通知lobby寫回數據並開牌
+		this.doRpcToMultiLobbies("user","batchUpdate",Object.keys(user_result),user_result);
 	    
+	    //统计分析，保存现场等
 	    this.zhuang_result_send = zhuang_result_send;
 	    this.openResult = openResult;
 
@@ -732,10 +625,6 @@ var Table = TablePublic.extend({
 	    }
 		logicApp.analyser.add(this.tableId,analyser);
 	    		
-	    logger.debug(user_result);
-	    
-
-
 	},
 	onBet : function(uid,men,point){
 		logger.info("onBet",uid,men,point);
@@ -825,7 +714,7 @@ var Table = TablePublic.extend({
 
 		this.userCounter = Object.keys(this.userList).length;
 
-		if (this.state=="init" && ) {
+		if (this.state=="init" && !user.is_robot) {
 			//第一个进桌的驱动这个桌子开始跑循环
 			this.begin();
 		}
