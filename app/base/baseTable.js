@@ -66,7 +66,7 @@ var Table = Class.extend({
 			targetLoobies.push(logicApp.uidLobbyIdMapping[uid]);
 
 		}
-		rpc.typMulticastCall("lobby","broadcast","list",targetLoobies,{uids:targetUids,info:{c:category,m:method,d:data}})
+		rpc.typMulticastCall("lobby",category,method,targetLoobies,data);
 	},
 	arrange_user_list: function(){
 		utils.PLEASE_OVERWRITE_ME();

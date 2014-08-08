@@ -611,7 +611,7 @@ var Table = TablePublic.extend({
 		
 		this.doBroadcast("table","OpenNot",{zhuang:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
 		//rpc 通知lobby寫回數據並開牌
-		this.doRpcToMultiLobbies("user","batchUpdate",Object.keys(user_result),user_result);
+		this.doRpcToMultiLobbies("zha","batchUpdateWhenOpen",Object.keys(user_result),user_result);
 	    
 	    //统计分析，保存现场等
 	    this.zhuang_result_send = zhuang_result_send;
