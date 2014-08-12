@@ -9,6 +9,27 @@ var UserDM = BaseDM.extend({
 		
 		this.CACHE_EXPIRE = 3600;
 	},
+	getFromDB:function(uid,cb){
+		var collection = mongodb.collection('user');
+    	collection.findOne({uid:uid}, function(err, info) {
+    		if (err) {
+    			cb(-2,err);
+    			return;
+    		}
+    		if (info===null) {
+    			cb(-1);
+    			return;
+    		}
+    		self.setData("baseInfo",uid,info.baseInfo);
+    		self.setCacheHash("baseInfo",uid,info.baseInfo);
+    		self.setData("extendInfo",uid,info.extendInfo);
+    		self.setCacheHash("extendInfo",uid,info.extendInfo);
+    		self.setData("devicesList",uid,info.devicesList);
+    		self.setCacheArray("devicesList",uid,info.devicesList);
+    		cb(2,info);
+    		
+    	});
+	},
 	getBaseInfo:function(param,cb){
 		//参数只有uid，
 
@@ -41,27 +62,7 @@ var UserDM = BaseDM.extend({
             function getDB(callback){
             	//然后找mongo
             	logger.debug("get from DB");
-            	
-            	var collection = db.collection('user');
-            	collection.findOne({_id:new ObjectId(id)}, function(err, item) {
-
-            		
-            	});
-                db.query(sql, function(err, rows, fields) {
-		    		if (err) {
-		    			callback(-2,err);
-		    			return;
-		    		}
-		    		if (rows.length==0) {
-		    			callback(-1);
-		    			return;
-		    		}
-		    		var info = rows[0];
-		    		self.setData(cacheMethod,id,info);
-		    		// logger.debug("db get user",userInfo);
-		    		self.setCacheHash(cacheMethod,id,info);
-		    		callback(2,info);
-		    	});
+            	self.getFromDB(id,callback);
             }
        //      function getDB(callback){
        //      	logger.debug("getDB");
