@@ -74,55 +74,6 @@ var BaseDM = Class.extend({
 		    cb(1);
 		});
 	},
-	doOneLineSelectWithCache: function(cacheMethod,id,sql,cb){
-		var self = this;
-		async.waterfall([
-            function getCacheHash(callback) {
-            	logger.debug("getCacheHash");
-				var real_key = self.getCacheKey(cacheMethod,id);
-				logger.debug(real_key);
-				kvdb.hgetall(real_key, function(err, reply) {
-				    if (err) {
-				    	callback(-2,err);
-				    	return;
-				    }
-				    if (reply===null) {
-				    	callback(null);
-				    	return;
-				    }
-				    //hit cache!!!
-				    self.setData(cacheMethod,id,reply);
-				    logger.debug(cacheMethod,id,"hit cache!!!");
-				    callback(1,reply);
-				});
-            },
-            function getDB(callback){
-            	logger.debug("getDB");
-                db.query(sql, function(err, rows, fields) {
-		    		if (err) {
-		    			callback(-2,err);
-		    			return;
-		    		}
-		    		if (rows.length==0) {
-		    			callback(-1);
-		    			return;
-		    		}
-		    		var info = rows[0];
-		    		self.setData(cacheMethod,id,info);
-		    		// logger.debug("db get user",userInfo);
-		    		self.setCacheHash(cacheMethod,id,info);
-		    		callback(2,info);
-		    	});
-            }
-        ], function doneAll (err, result) {
-            if (err && err<=0) {
-                logger.error("doneAll with err",err,result);
-                cb(err,result);
-            } else {
-            	cb(1,result);
-            }
-            
-        });	
-	}
+	
 });
 module.exports = BaseDM;

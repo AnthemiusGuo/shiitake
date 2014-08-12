@@ -10,9 +10,88 @@ var UserDM = BaseDM.extend({
 		this.CACHE_EXPIRE = 3600;
 	},
 	getBaseInfo:function(param,cb){
-		var sql = utils.supplant('SELECT * FROM u_account WHERE uid={uid}',param);
+		//参数只有uid，
 
-		this.doOneLineSelectWithCache("baseInfo",param.uid,sql,cb);
+		// var sql = utils.supplant('SELECT * FROM u_account WHERE uid={uid}',param);
+		var cacheMethod = "baseInfo";
+		var id = param.uid;
+		var self = this;
+
+		async.waterfall([
+            function getCacheHash(callback) {
+            	//先找cache
+            	logger.debug("getCacheHash");
+				var real_key = self.getCacheKey(cacheMethod,id);
+				logger.debug(real_key);
+				kvdb.hgetall(real_key, function(err, reply) {
+				    if (err) {
+				    	callback(-2,err);
+				    	return;
+				    }
+				    if (reply===null) {
+				    	callback(null);
+				    	return;
+				    }
+				    //hit cache!!!
+				    self.setData(cacheMethod,id,reply);
+				    logger.debug(cacheMethod,id,"hit cache!!!");
+				    callback(1,reply);
+				});
+            },
+            function getDB(callback){
+            	//然后找mongo
+            	logger.debug("get from DB");
+            	
+            	var collection = db.collection('user');
+            	collection.findOne({_id:new ObjectId(id)}, function(err, item) {
+
+            		
+            	});
+                db.query(sql, function(err, rows, fields) {
+		    		if (err) {
+		    			callback(-2,err);
+		    			return;
+		    		}
+		    		if (rows.length==0) {
+		    			callback(-1);
+		    			return;
+		    		}
+		    		var info = rows[0];
+		    		self.setData(cacheMethod,id,info);
+		    		// logger.debug("db get user",userInfo);
+		    		self.setCacheHash(cacheMethod,id,info);
+		    		callback(2,info);
+		    	});
+            }
+       //      function getDB(callback){
+       //      	logger.debug("getDB");
+       //          db.query(sql, function(err, rows, fields) {
+		    	// 	if (err) {
+		    	// 		callback(-2,err);
+		    	// 		return;
+		    	// 	}
+		    	// 	if (rows.length==0) {
+		    	// 		callback(-1);
+		    	// 		return;
+		    	// 	}
+		    	// 	var info = rows[0];
+		    	// 	self.setData(cacheMethod,id,info);
+		    	// 	// logger.debug("db get user",userInfo);
+		    	// 	self.setCacheHash(cacheMethod,id,info);
+		    	// 	callback(2,info);
+		    	// });
+       //      }
+        ], function doneAll (err, result) {
+            if (err && err<=0) {
+                logger.error("doneAll with err",err,result);
+                cb(err,result);
+            } else {
+            	cb(1,result);
+            }
+            
+        });	
+	}
+		
 	},
 	setBaseInfo:function(key,data,cb){
 		//同下, 方案2

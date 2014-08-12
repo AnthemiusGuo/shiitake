@@ -18,6 +18,14 @@ config.mysql = {
 	db: 'card_game'
 };
 
+config.mongodb = {
+	port: 27017,
+	host: 'localhost',
+	user: 'test',
+	password: 'test',
+	db: 'card_game'
+};
+
 config.upstreamUrl = {
 	url:""
 }
@@ -59,6 +67,7 @@ if (PRODUCTION==="production") {
 	    	"rpcMode":"lobby",
 	    	"rpcProtocol":"websocket",
 	    	"rpcMustConnect" : true,
+	    	"dbMods" : {"mongo":true,"redis":true,"mysql":false},
 	    	"serverList" : {
 	    		"lobby-server-1":{"id":"lobby-server-1","typ":"lobby","host":"127.0.0.1","port":3001,"clientPort":3000,"frontend":true}
 	    	}
@@ -94,6 +103,7 @@ if (PRODUCTION==="production") {
 	    	"rpcProtocol":"websocket",
 	    	"rpcMustConnect" : false,
 	    	"indexMode": ["room","money"],//different server for different room
+	    	"dbMods" : {"mongo":true,"redis":true,"mysql":false},
 	    	"serverList" : {
 	    		// "zha-srv-1-1":{"id":"zha-srv-1-1","host":"127.0.0.1","port":3011,"clientPort":3010,"frontend":true,"indexParam":{"roomId":1,"minEntry":1000,"maxEntry":10000}}
 	    		//cap:容量，对于本类型游戏，容量就是桌子数，开了几张桌子
@@ -113,6 +123,7 @@ if (PRODUCTION==="production") {
 	    	"runTyp":"nodejs",
 	    	"rpcMode":"robot",
 	    	"rpcProtocol":"websocket",
+	    	"dbMods" : {"mongo":true,"redis":true,"mysql":false},
 	    	"serverList" : {
 	    	//for关键字
 	    		"robot-server-zha":{"id":"robot-server-zha","typ":"robot","host":"127.0.0.1","port":3031,"clientPort":3030,"frontend":false,"for":"zha"}
@@ -132,6 +143,7 @@ if (PRODUCTION==="production") {
 	    	"runTyp":"nodejs",
 	    	"rpcMode":"game",
 	    	"rpcProtocol":"none",//无RPC调用提供
+	    	"dbMods" : {"mongo":true,"redis":true,"mysql":false},
 	    	"serverList" : {
 	    		"samples2-server-1":{"id":"samples2-server-1","typ":"samples2","host":"127.0.0.1","clientPort":3030,"frontend":true}
 	    	}

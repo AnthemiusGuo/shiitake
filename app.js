@@ -54,88 +54,107 @@ logger.setLevel('ALL');
 // logger.error('Cheese is too ripe!');
 // logger.fatal('Cheese was breeding ground for listeria.');
 /*prepare*/
-
-
-/*prepare mysql*/
-if (config.mysql!=undefined) {
-    var mysql      = require('mysql');
-    global.db = mysql.createConnection({
-      host     : config.mysql.host,
-      user     : config.mysql.user,
-      password : config.mysql.password,
-      database : config.mysql.db,
-    });
-    db.allReady = false;
-
-    db.connect(function(err) {
-        if (err) {
-            logger.error('mysql error connecting: ' + err.stack);
-            return;
-        }
-        db.allReady = true;
-        logger.info('mysql connected as id ' + db.threadId);
-    });
-
-    // db.query('SELECT 1 + 1 AS solution', function(err, rows, fields) {
-    //   if (err) throw err;
-
-    //   logger.debug('The solution is: ', rows[0].solution);
-    // });
-
-    // db.end();
-}
-
-/*prepare redis*/
-if (config.redis!=undefined) {
-    global.redis = require("redis");
-    global.kvdb = redis.createClient();
-    kvdb.allReady = false;
-    // if you'd like to select database 3, instead of 0 (default), call
-    // kvdb.select(3, function() { /* ... */ });
-    kvdb.on("connect", function () {
-        logger.info('redis connected');
-        kvdb.allReady = true;
-    }).on("error", function (err) {
-        logger.debug("Error " + err);
-    });
-    //client.mset(["test keys 1", "test val 1", "test keys 2", "test val 2"], function (err, res) {});
-
-    //client.mset("test keys 1", "test val 1", "test keys 2", "test val 2", function (err, res) {});
-
-    //client.set("some key", "some val");
-    //client.set(["some other key", "some val"]);
-
-    //client.get("missingkey", function(err, reply) {
-    // reply is null when the key is missing
-    //    logger.debug(reply);
-    //});
-
-    // kvdb.set("string key", "string val", redis.print);
-    // kvdb.hset("hash key", "hashtest 1", "some value", redis.print);
-    // kvdb.hset(["hash key", "hashtest 2", "some other value"], redis.print);
-    // kvdb.hkeys("hash key", function (err, replies) {
-    //     logger.debug(replies.length + " replies:");
-    //     replies.forEach(function (reply, i) {
-    //         logger.debug("    " + i + ": " + reply);
-    //     });
-    //     kvdb.quit();
-    // });
-}
-
+var configInfo = config.servers[appTyp];
 var serversInfo = config.servers[appTyp].serverList[appId];
+async.parallel([
+        function mysqlCon(callback){
+            /*prepare mysql*/
+            if (configInfo.dbMods.mysql && config.mysql!=undefined) {
+                var mysql      = require('mysql');
+                global.db = mysql.createConnection({
+                  host     : config.mysql.host,
+                  user     : config.mysql.user,
+                  password : config.mysql.password,
+                  database : config.mysql.db,
+                });
+                db.allReady = false;
 
-DmManager = require('framework/base/dataModelManager');
-global.dmManager = new DmManager();
+                db.connect(function(err) {
+                    if (err) {
+                        logger.error('mysql error connecting: ' + err.stack);
+                         callback(-1,err);
+                    }
+                    db.allReady = true;
+                    logger.info('mysql connected as id ' + db.threadId);
+                    callback(null);
+                });
 
-var LogicApp = require('app/apps/'+appTyp+'/app');
-global.logicApp = new LogicApp(appTyp,appId,serversInfo); 
+            } else {
+                callback(null);
+            }
+        },
+        function mongodbCon(callback){
+            if (configInfo.dbMods.mongodb && config.mongodb!=undefined) {
+                var MongoClient = require('mongodb').MongoClient;
+
+            // Connect to the db
+                global.ObjectId = require('mongodb').ObjectID,
+                global.mongodb = {allReady:false};
+                // Connect to the db
+                MongoClient.connect("mongodb://"+config.mongodb.host+":"+config.mongodb.port+"/"+config.mongodb.db, function(err, db) {
+                    if(!err) {
+                        logger.info('mongodb connected');
+                        mongodb = db;
+                        mongodb.allReady = true;
+                        callback(null);
+                    } else {
+                        logger.error("mongo db conntet failed",err);
+                        callback(-2,err);
+                    }
+                });
+            } else {
+                callback(null);
+            }
+        },
+        function redisCon(callback){
+            /*prepare redis*/
+            if (configInfo.dbMods.redis && config.redis!=undefined) {
+                global.redis = require("redis");
+                global.kvdb = redis.createClient();
+                kvdb.allReady = false;
+                // if you'd like to select database 3, instead of 0 (default), call
+                // kvdb.select(3, function() { /* ... */ });
+                kvdb.on("connect", function () {
+                    logger.info('redis connected');
+                    kvdb.allReady = true;
+                    callback(null);
+                }).on("error", function (err) {
+                    logger.debug("redis Error " + err);
+                    callback(-3,err);
+                });
+                
+            } else {
+                callback(null);
+            }
+        },
 
 
-console.log("init rpc calling...");
-var RPC = require('framework/base/rpcManager');
-global.rpc = new RPC(config.servers,appTyp);
+    ],
+    // optional callback
+    function(err, results){
+        // the results array will equal ['one','two'] even though
+        // the second function had a shorter timeout.
+        if (err!=null) {
+            logger.error("INIT FAILED!!!");
+            process.exit();
+            return;
+        } 
+        DmManager = require('framework/base/dataModelManager');
+        global.dmManager = new DmManager();
 
-logicApp.prepare();
-logicApp.run();
+        var LogicApp = require('app/apps/'+appTyp+'/app');
+        global.logicApp = new LogicApp(appTyp,appId,serversInfo); 
+
+
+        console.log("init rpc calling...");
+        var RPC = require('framework/base/rpcManager');
+        global.rpc = new RPC(config.servers,appTyp);
+
+        logicApp.prepare();
+        logicApp.run();
+    }
+);
+
+
 //e.g.
 //rpc.run("lobby","recudeCoin",{uid:1},{uid:1,count:1000});

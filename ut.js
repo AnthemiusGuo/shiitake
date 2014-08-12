@@ -55,64 +55,173 @@ logger.setLevel('ALL');
 /*prepare*/
 var WebSocketServer = require('ws').Server;
 
-var ClientUser = require('app/apps/'+appTyp+'/client');
-var ClientRPC = require('framework/base/rpcClient');
+var dbMods = ["mysql","mongodb"];
+async.parallel([
+        function mysqlCon(callback){
+            /*prepare mysql*/
+            if (config.mysql!=undefined) {
+                var mysql      = require('mysql');
+                global.db = mysql.createConnection({
+                  host     : config.mysql.host,
+                  user     : config.mysql.user,
+                  password : config.mysql.password,
+                  database : config.mysql.db,
+                });
+                db.allReady = false;
+
+                db.connect(function(err) {
+                    if (err) {
+                        logger.error('mysql error connecting: ' + err.stack);
+                         callback(-1,err);
+                    }
+                    db.allReady = true;
+                    logger.info('mysql connected as id ' + db.threadId);
+                    callback(null);
+                });
+
+            } else {
+                callback(null);
+            }
+        },
+        function mongodbCon(callback){
+            if (config.mongodb!=undefined) {
+                var MongoClient = require('mongodb').MongoClient;
+
+            // Connect to the db
+                global.ObjectId = require('mongodb').ObjectID,
+                global.mongodb = {allReady:false};
+                // Connect to the db
+                MongoClient.connect("mongodb://"+config.mongodb.host+":"+config.mongodb.port+"/"+config.mongodb.db, function(err, db) {
+                    if(!err) {
+                        logger.info('mongodb connected');
+                        mongodb = db;
+                        mongodb.allReady = true;
+                        callback(null);
+                    } else {
+                        logger.error("mongo db conntet failed",err);
+                        callback(-2,err);
+                    }
+                });
+            } else {
+                callback(null);
+            }
+        },
+        function redisCon(callback){
+            /*prepare redis*/
+            if (config.redis!=undefined) {
+                global.redis = require("redis");
+                global.kvdb = redis.createClient();
+                kvdb.allReady = false;
+                // if you'd like to select database 3, instead of 0 (default), call
+                // kvdb.select(3, function() { /* ... */ });
+                kvdb.on("connect", function () {
+                    logger.info('redis connected');
+                    kvdb.allReady = true;
+                    callback(null);
+                }).on("error", function (err) {
+                    logger.debug("redis Error " + err);
+                    callback(-3,err);
+                });
+                
+            } else {
+                callback(null);
+            }
+        },
 
 
-/*prepare mysql*/
-if (config.mysql!=undefined) {
-    var mysql      = require('mysql');
-    global.db = mysql.createConnection({
-      host     : config.mysql.host,
-      user     : config.mysql.user,
-      password : config.mysql.password,
-      database : config.mysql.db,
-    });
-    db.allReady = false;
-
-    db.connect(function(err) {
-        if (err) {
-            logger.error('mysql error connecting: ' + err.stack);
-            return;
+    ],
+    // optional callback
+    function(err, results){
+        // the results array will equal ['one','two'] even though
+        // the second function had a shorter timeout.
+        if (err==null) {
+            err = 1;
         }
-        db.allReady = true;
-        logger.info('mysql connected as id ' + db.threadId);
+        doNext();
+    });
+
+
+function doNext(){
+    var sql = "SELECT * FROM u_account";
+    var collection = mongodb.collection('user');
+
+    db.query(sql, function(err, rows, fields) {
+        if (err) {
+             logger.info(-2,err);
+             return;
+         }
+         if (rows.length==0) {
+             logger.info(-1);
+             return;
+         }
+         for (var k in rows){
+             var info = rows[k];
+             collection.insert({uid:info.uid,baseInfo:info}, {w:1}, function(err, result) {
+                logger.info(err,result);
+             });
+         }
+        
+    });
+
+    sql = "SELECT * FROM u_user_extend";
+
+    db.query(sql, function(err, rows, fields) {
+        if (err) {
+             logger.info(-2,err);
+             return;
+         }
+         if (rows.length==0) {
+             logger.info(-1);
+             return;
+         }
+         for (var k in rows){
+             var info = rows[k];
+             logger.info("u_user_extend",info);
+             collection.update({uid:info.uid}, {$set:{extendInfo:info}}, {w:1}, function(err, result) {
+                logger.info(err,result);
+             });
+         }
+        
+    });
+
+    sql = "SELECT * FROM u_account_devices";
+
+    db.query(sql, function(err, rows, fields) {
+        if (err) {
+             logger.info(-2,err);
+             return;
+         }
+         if (rows.length==0) {
+             logger.info(-1);
+             return;
+         }
+         for (var k in rows){
+             var info = rows[k];
+             logger.info("u_account_devices",info);
+             collection.update({uid:info.uid}, {$push:{devicesList:info.uuid}}, {w:1}, function(err, result) {
+                logger.info(err,result);
+             });
+         }
+        
     });
 
 }
+// DmManager = require('framework/base/dataModelManager');
+// global.dmManager = new DmManager();
 
-/*prepare redis*/
-if (config.redis!=undefined) {
-    global.redis = require("redis");
-    global.kvdb = redis.createClient();
-    kvdb.allReady = false;
-    // if you'd like to select database 3, instead of 0 (default), call
-    // kvdb.select(3, function() { /* ... */ });
-    kvdb.on("connect", function () {
-        logger.info('redis connected');
-        kvdb.allReady = true;
-    }).on("error", function (err) {
-        logger.debug("Error " + err);
-    });
-    
-}
-
-DmManager = require('framework/base/dataModelManager');
-global.dmManager = new DmManager();
-
-var LogicApp = require('app/apps/'+appTyp+'/'+appTyp);
-global.logicApp = new LogicApp(appTyp,appId,config.servers[appTyp].serverList[appId]); 
+// var LogicApp = require('app/apps/'+appTyp+'/'+appTyp);
+// global.logicApp = new LogicApp(appTyp,appId,config.servers[appTyp].serverList[appId]); 
 
 
-var roomConfigs = require('app/config/zha');
-var roomConfig = roomConfigs.servers["zha-srv-1-1"];
- var uid = 21;
+// var roomConfigs = require('app/config/zha');
+// var roomConfig = roomConfigs.servers["zha-srv-1-1"];
+//  var uid = 21;
 
-var keys = {uid:uid};
-var changes = {'credits':10000,'exp':1000,total_credits:10000};
-dmManager.setDataChange("user","BaseInfo",keys,changes,function(ret,data){
-    logger.info(ret,data);
-});
+// var keys = {uid:uid};
+// var changes = {'credits':10000,'exp':1000,total_credits:10000};
+// dmManager.setDataChange("user","BaseInfo",keys,changes,function(ret,data){
+//     logger.info(ret,data);
+// });
 // var Table =  require('app/apps/zha/table');
 // var table = new Table(1,roomConfig);
 // table.user_bet_info = {};

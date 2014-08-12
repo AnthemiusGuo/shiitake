@@ -8,6 +8,7 @@
     "redis":"latest",
     "hiredis":"latest",
     "mysql":"~2.3.2",
+    "mongodb":"latest",
     "node.class":"latest",
     "phpjs":"latest",
     "log4js":"latest",

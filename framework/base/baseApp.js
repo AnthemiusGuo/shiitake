@@ -54,17 +54,7 @@ var BaseApp = Class.extend({
 			this.allReady = false;
 			return;
 		}
-		
-		if (db.allReady===false) {
-			logger.info("checkStatus db not ready");
-			this.allReady = false;
-			return;
-		} 
-		if (kvdb.allReady===false) {
-			logger.info("checkStatus kvdb not ready");
-			this.allReady = false;
-			return;
-		} 
+
 		if (rpc.allReady===false) {
 			logger.info("checkStatus rpc not ready");
 			this.allReady = false;
