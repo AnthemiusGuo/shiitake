@@ -467,23 +467,6 @@ var Table = TablePublic.extend({
 
 		return tempPai;
 	},
-	_rpcCallUserChangeBatch : function(){
-		logger.info("_rpcCallUserChangeBatch",this.uidChanged);
-		for (var k in this.uidChanged){
-			if (this.uidChanged[k]==0) {
-				//not write back yet, so don't call rpc
-				return;
-			}
-		}
-		var uids = F.array_keys(this.uidChanged);
-		logger.info("_rpcCallUserChangeBatch",uids);
-		//rpc 通知Lobby以下用户发生数据变化, 为了节约信令, 采用batch通知
-	    //upsteam无需通知,只要改变缓存内的值,直接可以生效
-	    //typ,category,method,id,params){
-	    rpc.typBroadcastCall("lobby","user","batchReload",{uids:uids});
-
-		this.uidChanged = {};
-	},
 	doOpenAwards : function(){
 		//发奖
 		var openResult = {};
@@ -498,7 +481,7 @@ var Table = TablePublic.extend({
 	    var user_get = {};
 	    var zhuang_get = 0;
 
-	    var user_result = {"-1":{}};
+	    var user_result = {};
 
 	    var zhuang_result = [0,0,0,0];
 
@@ -514,7 +497,8 @@ var Table = TablePublic.extend({
 			sysWin : 0,
 			water : 0,
 			robotWin : 0,
-			zhuangWin : 0
+			zhuangWin : 0,
+			zhuangWinRound : 0,
 		};
 
 	    //不管用户在线不,先计算输赢
@@ -535,7 +519,7 @@ var Table = TablePublic.extend({
 	            
 	            if (result==0){
 	                //庄家胜
-
+	                analyser.zhuangWinRound ++;
 	                var ratio = config_zha_ratio[this.zhuang.poker_typ.typ];
 	                change_credits = Math.round(point*ratio);
 
@@ -569,6 +553,8 @@ var Table = TablePublic.extend({
 	        }
 	        user_result[uid]['get_credits'] = real_credits;
 			user_result[uid]['get_exp'] = exp;
+			//uid用於async的討厭的基於array而非hash
+			user_result[uid].uid = uid;
 	    }
 
 	    //用户总收益, 用于统计分析
@@ -605,13 +591,18 @@ var Table = TablePublic.extend({
 
 		if (this.zhuang_uid!=0){
 			user_result[this.zhuang_uid] = zhuang_result_send;
+			//uid用於async的討厭的基於array而非hash
+			user_result[this.zhuang_uid].uid = this.zhuang_uid;
 		}
 
 		//rpc 通知所有人開牌，
-		
-		this.doBroadcast("table","OpenNot",{zhuang:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer});
-		//rpc 通知lobby寫回數據並開牌
-		this.doRpcToMultiLobbies("zha","batchUpdateWhenOpen",Object.keys(user_result),user_result);
+		this.doWriteBack(user_result,function(err){
+			var uids = Object.keys(user_result);
+			if (uids.length>0){
+				rpc.typBroadcastCall("lobby","user","batchReload",{uids:uids});
+			}
+			this.doBroadcastWithFilter("table","OpenNot",{zhuang:zhuang_result_send,r:openResult,cd:this.stateConfig[this.state].timer},{my:user_result});
+		}.bind(this));
 	    
 	    //统计分析，保存现场等
 	    this.zhuang_result_send = zhuang_result_send;
@@ -879,7 +870,28 @@ var Table = TablePublic.extend({
 	},
 	askRobotZhuang : function(count) {
 		rpc.call("robot","user","joinAndAskZhuang",{forTyp:"zha"},{count:count,tableId:this.tableId,serverId:logicApp.id,ticket:logicApp.globalTicket});
-	}
+	},
+	doWriteBack : function(data,cb) {
+		logger.info("doWriteBack",data);
+		async.each(F.array_values(data), function( item, callback) {
+			logger.info("dmManager.setDataChange",item);
+			var changes = {credits:item.get_credits,exp:item.get_exp,total_credits:item.get_credits};
+			var uid = item.uid;
+
+			dmManager.setDataChange("user","BaseInfo",{uid:uid},changes,function(ret,data){
+				callback();
+			});		  
+		}, function(err){
+		    // if any of processing produced an error, err would equal that error
+		    if( err ) {
+				// One of the iterations produced an error.
+				// All processing will now stop.
+		      	cb(err)
+		    } else {
+		      	cb(null);
+		    }
+		});
+	},
 });
 
 module.exports = Table;

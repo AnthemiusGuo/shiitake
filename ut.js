@@ -140,28 +140,41 @@ async.parallel([
         doNext();
     });
 
-
 function doNext(){
+  var collection = mongodb.collection('user');
+  var id = 21;
+  var targetData = {"baseInfo.credits":-1000,"baseInfo.exp":500,"baseInfo.total_credits":-1000};
+    collection.update({uid:id},{$inc:targetData}, {w:1}, function(err, result) {
+      logger.info("mongodb ret ",err,result);
+      if (err) {
+        logger.info(-2,err);
+        return;
+      }
+      logger.info(null);
+    });
+}
+function doNext2(){
     var sql = "SELECT * FROM u_account";
     var collection = mongodb.collection('user');
 
-    db.query(sql, function(err, rows, fields) {
-        if (err) {
-             logger.info(-2,err);
-             return;
-         }
-         if (rows.length==0) {
-             logger.info(-1);
-             return;
-         }
-         for (var k in rows){
-             var info = rows[k];
-             collection.insert({uid:info.uid,baseInfo:info}, {w:1}, function(err, result) {
-                logger.info(err,result);
-             });
-         }
+    // db.query(sql, function(err, rows, fields) {
+    //     if (err) {
+    //          logger.info(-2,err);
+    //          return;
+    //      }
+    //      if (rows.length==0) {
+    //          logger.info(-1);
+    //          return;
+    //      }
+    //      for (var k in rows){
+    //          var info = rows[k];
+    //          logger.info(k);
+    //          collection.insert({uid:info.uid,baseInfo:info}, {w:1}, function(err, result) {
+                
+    //          });
+    //      }
         
-    });
+    // });
 
     sql = "SELECT * FROM u_user_extend";
 

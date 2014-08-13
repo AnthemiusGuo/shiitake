@@ -41,7 +41,7 @@ var HTTPRPC = RpcCaller.extend({
 	},
 
 	callCommand : function(category,method,id,params,cb){
-		logger.debug("websocket","callCommand",category,method,id,params);
+		logger.debug(this.typ,"callCommand",category,method,params);
 
 		this.requestId++;
 		var reqId = this.requestId;

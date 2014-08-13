@@ -15,6 +15,28 @@ var RPCRouter = BaseRPCRouter.extend({
 			userSession.send(data.info.c,data.info.m,1,0,data.info.d);
 		}
 	},
+	on_msg_broadcast_filter: function(clientSession,ret,ts,data,packetSerId) {
+		logger.info("on_msg_broadcast_filter",data);
+		if (clientSession.gameId>0){
+			data.info.d.gameId = clientSession.gameId;
+		}
+		var filterData = data.filterData;
+		for (var k in data.uids) {
+			var uid = data.uids[k];
+			if (!F.isset(logicApp.uidUserMapping[uid])) {
+				logger.info("this user no in this lobby",uid)
+				continue;
+			}
+			var userSession = logicApp.uidUserMapping[uid];
+			for (var k in filterData) {
+				if (F.isset(filterData[k][uid])){
+					data.info.d[k] = filterData[k][uid];
+				}
+			}
+			userSession.send(data.info.c,data.info.m,1,0,data.info.d);
+		}
+	},
+	 
 	on_msg_singlecast_user : function(clientSession,ret,ts,data,packetSerId) {
 		var uid  = data.uid
 		if (!F.isset(logicApp.userSocketManager.idClientMapping[uid])) {

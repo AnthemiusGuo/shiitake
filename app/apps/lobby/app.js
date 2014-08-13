@@ -2,7 +2,7 @@ var BaseServer = require('framework/base/baseConnectorServer');
 var LobbyServer = BaseServer.extend({
 	
     prepare : function() {
-        this.LOGIN_CACHE_EXPIRE = 3600;
+        this.LOGIN_CACHE_EXPIRE = 86400;
         //for zha, 重新整理kv为基于room的
         this.config_zha = require('app/config/zha');
         this.prepareZhaRoomList();
@@ -44,10 +44,10 @@ var LobbyServer = BaseServer.extend({
         var game = data.game;
 
         var self = this;
-		if (F.isset(this.userSocketManager.idClientMapping[uid])) {
-			this.userSocketManager.idClientMapping[uid].kickUser();
+		if (F.isset(this.uidUserMapping[uid]) && this.uidUserMapping.isConnect) {
+			this.uidUserMapping.kickUser();
 		}
-		this.onlineUsers[uid] = userSession;
+		
         
 		//waterfall用法
 		//第一个callback函数调用时,第一个参数如果是null,则调用下一个函数(去掉地一个null)
@@ -106,7 +106,10 @@ var LobbyServer = BaseServer.extend({
         ], function doneAll (err, result) {
             if (err) {
                 logger.error("doneAll with err",err,result);
-                userSession.send("user","loginAck",err,packetId,{e:"登录失败"})
+                userSession.send("user","loginAck",err,packetId,{e:"登录失败"});
+
+            } else {
+                this.uidUserMapping[uid] = userSession;
             }
             
         });	

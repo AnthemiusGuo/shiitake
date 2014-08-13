@@ -43,6 +43,23 @@ var Table = Class.extend({
 	doSinglecast : function(uid,category,method,data) {
 		logicApp.doSinglecast(uid,category,method,data);
 	},
+	doBroadcastWithFilter : function(category,method,data,filterData) {
+		//下發的是全部用戶的信息，lobby根據filterkey字段，將每個用戶自己的信息下發給自己的用戶
+		logger.debug("doBroadcast",category,method);
+		var targetUids = [];
+		for (var uid in this.userList) {
+			if (this.userList[uid]==null) {
+				continue;
+			}
+			if (!F.isset(logicApp.uidUserMapping[uid])) {
+				continue;
+			}
+			if (logicApp.uidUserMapping[uid].isConnect) {
+				targetUids.push(uid);
+			}
+		}
+		rpc.typBroadcastCall("lobby","broadcast","filter",{uids:targetUids,info:{c:category,m:method,d:data},filterData:filterData})
+	},
 	doRpcToMultiLobbies : function(category,method,uids,data) {
 
 		logger.debug("doBroadcast",category,method);
