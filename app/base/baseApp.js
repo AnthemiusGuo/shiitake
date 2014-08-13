@@ -3,10 +3,10 @@ var AppBaseServer = BaseServer.extend({
 	batchReload: function(uids) {
 		for (var i = 0; i < uids.length; i++) {
 			var uid = uids[i];
-			if (!F.isset(this.userSocketManager.idClientMapping[uid])){
+			if (!F.isset(this.uidUserMapping[uid])){
 				continue;
 			}
-			var userSession = this.userSocketManager.idClientMapping[uid];
+			var userSession = this.uidUserMapping[uid];
 
 			dmManager.getData("user","BaseInfo",{uid:uid},function(ret,data){
 				if (ret>0) {

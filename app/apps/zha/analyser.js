@@ -5,7 +5,7 @@ var Analyser = Class.extend({
 	},
 	getDate: function() {
 		var now = new Date();
-		return now.getFullYear()+"/"+now.getMonth()+"/"+now.getDate();
+		return now.getFullYear()+"/"+(now.getMonth()+1)+"/"+now.getDate();
 	},
 	initTable: function(tableId) {
 		this.tableAnalyse[tableId] = {
@@ -29,7 +29,7 @@ var Analyser = Class.extend({
 				this.tableAnalyse[tableId][k] = data[k];
 			}
 		}
-		kvdb.hmset("analyse/zha/"+this.date,this.tableAnalyse);
+		kvdb.hmset("analyse/zha/"+this.date,this.tableAnalyse[tableId],redis.print);
 	}
 });
 

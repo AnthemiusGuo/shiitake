@@ -2,7 +2,7 @@ var BaseServer = require('app/base/baseApp');
 var ConnectorServer = BaseServer.extend({
 	init : function(typ,id,info) {
 		this._super(typ,id,info);
-		this.onlineUsers = {};
+		this.uidUserMapping = {};
         this.onlineUserCount = 0;
         this.gameServers = {};
         for (var k in config.servers) {

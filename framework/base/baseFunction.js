@@ -87,3 +87,7 @@ var clearUpHash = function(hash) {
 
 exports.clearUpArray = clearUpArray;
 exports.clearUpHash = clearUpHash;
+
+exports.getNowTS = function(){
+  return new Date().getTime();
+}

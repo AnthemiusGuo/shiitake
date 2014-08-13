@@ -1,11 +1,11 @@
 var redis = require("redis");
 var BaseDM = Class.extend({
 	init : function() {
-		this.CACHE_EXPIRE = 3600;
+		this.CACHE_EXPIRE = 86400;
 		this.useCache = true;
 		this.data = {};
 		this.cacheCategory = "base";
-
+		this.keySetExpireTS = {};
 	},
 
 	getCacheKey : function(method,key) {
@@ -62,8 +62,18 @@ var BaseDM = Class.extend({
 		}
 		var real_key = this.getCacheKey(method,key);
 		var self = this;
+		if (!F.isset(this.keySetExpireTS[real_key])){
+			this.keySetExpireTS[real_key] = 0;
+		} 
 		kvdb.hmset(real_key, value,function(err, res) {
-			kvdb.expire(real_key,self.CACHE_EXPIRE,redis.print);
+			var now = utils.getNowTS()/1000;
+			if (now - self.keySetExpireTS[real_key]>self.CACHE_EXPIRE-600) {
+				//超时前10分钟没设置过超时了，设置一下
+				//如果超时设定少于10分钟，那么每次都刷一次超时
+				self.keySetExpireTS[real_key] = now;
+				kvdb.expire(real_key,self.CACHE_EXPIRE,redis.print);
+			}
+			
 			if (!F.isset(cb)){
 				return;
 			}
