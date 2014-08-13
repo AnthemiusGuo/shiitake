@@ -25,16 +25,15 @@ var RPCRouter = BaseRPCRouter.extend({
 	},
 	on_msg_game_leaveTableReq : function(clientSession,ret,ts,data,packetSerId) {
 		//{"c":"user","m":"login","d":{"uid":1},"t":1404292893355,"s":0,"r":1}
-		if (!utils.checkParam(data,["prefer","uid"])) {
+		if (!utils.checkParam(data,["uid"])) {
 			clientSession.sendErrPackFormat(packetSerId);
 			return;
 		}
 		
 		var uid = data.uid;
-		logger.debug("find table ID:"+uid);
 		var ret = this.app.onLeaveTable(uid,tableId);
 
-		clientSession.send("game","joinTableAck",ret[0],packetSerId,ret[1]);
+		clientSession.send("game","leaveTableAck",ret[0],packetSerId,ret[1]);
 
 	},
 	on_msg_table_betReq : function(clientSession,ret,ts,data,packetSerId) {

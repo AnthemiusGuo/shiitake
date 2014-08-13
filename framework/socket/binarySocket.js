@@ -18,6 +18,7 @@ var BinarySocket = Class.extend({
 	    	});
 	    });
 	    this.server.listen(this.port);
+	}
 });
 
 module.exports = BinarySocket;
