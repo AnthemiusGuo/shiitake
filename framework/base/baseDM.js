@@ -29,7 +29,6 @@ var BaseDM = Class.extend({
 		}
 		this.data[this.cacheCategory][method][key] = value;
 	},
-
 	getCacheHash : function(method,key,cb_bingo,cb_noCache){
 		if (!this.useCache) {
 			cb_noCache(-1);
@@ -75,9 +74,6 @@ var BaseDM = Class.extend({
 		    cb(1);
 		});
 	},
-	setCacheArray : function(method,key,value,cb){
-		
-	}
 	
 });
 module.exports = BaseDM;

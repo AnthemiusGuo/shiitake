@@ -140,30 +140,18 @@ async.parallel([
         doNext();
     });
 
-function doNext(){
-    var uid=123333333;
-    var collection = mongodb.collection('user');
-    collection.findOne({uid:uid}, function(err, item) {
-        logger.info(err,item);
-        
-    });
-}
 
-function doNext2(){
+function doNext(){
     var sql = "SELECT * FROM u_account";
     var collection = mongodb.collection('user');
 
-    async.waterfall(
-            [
-            function (callback) {
-        db.query(sql, function(err, rows, fields) {
+    db.query(sql, function(err, rows, fields) {
         if (err) {
-             
-             callback(-2,err);
+             logger.info(-2,err);
              return;
          }
          if (rows.length==0) {
-             callback(-1);
+             logger.info(-1);
              return;
          }
          for (var k in rows){
@@ -172,61 +160,51 @@ function doNext2(){
                 logger.info(err,result);
              });
          }
-         callback(null);
         
     });
-    },
-    function(callback){
-
 
     sql = "SELECT * FROM u_user_extend";
 
     db.query(sql, function(err, rows, fields) {
         if (err) {
-             callback(-2,err);
+             logger.info(-2,err);
              return;
          }
          if (rows.length==0) {
-             callback(-1);
+             logger.info(-1);
              return;
          }
          for (var k in rows){
              var info = rows[k];
              logger.info("u_user_extend",info);
              collection.update({uid:info.uid}, {$set:{extendInfo:info}}, {w:1}, function(err, result) {
+                logger.info(err,result);
              });
          }
-         callback(null);
         
     });
-    }
-    ,function(callback) {
 
     sql = "SELECT * FROM u_account_devices";
 
     db.query(sql, function(err, rows, fields) {
         if (err) {
-             callback(-2,err);
+             logger.info(-2,err);
              return;
          }
          if (rows.length==0) {
-             callback(-1);
+             logger.info(-1);
              return;
          }
          for (var k in rows){
              var info = rows[k];
              logger.info("u_account_devices",info);
              collection.update({uid:info.uid}, {$push:{devicesList:info.uuid}}, {w:1}, function(err, result) {
+                logger.info(err,result);
              });
          }
-         callback(null);
         
     });
-    }
-    ],
-    function(error,info){
 
-    });
 }
 // DmManager = require('framework/base/dataModelManager');
 // global.dmManager = new DmManager();
