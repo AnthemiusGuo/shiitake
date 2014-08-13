@@ -680,6 +680,13 @@ var Table = TablePublic.extend({
 		//category,method,ret,packetId,data
 		return [1,{total_bet_info:this.bet_info,my_bet_info:userSession.bet_info}];
 	},
+	onLeaveTable : function(user) {
+		if (user.matchId_has_bet == this.matchId) {
+			return [-200,{e:'您已经下注，不可退出当前游戏'}];
+		}
+		this.userList[user.uid] = null;
+		logicApp.uidUserMapping[user.uid] = null;
+	},
 	onJoinTable : function(user) {
 		logger.debug("user "+user.uid+" join the table");
 

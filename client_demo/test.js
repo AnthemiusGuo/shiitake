@@ -343,6 +343,11 @@ function ask_zhuang(){
 	sendGame('table','askZhuangReq',{})
 }
 
+function ask_zhuang(){
+	sendGame('game','leaveTableReq',{})
+}
+
+
 setInterval(function(){
 	$.getJSON(webUrl+"?m=user&a=refresh&uid="+uid,function(json){
 		if (typeof(json.data.ticket)!="undefined"){

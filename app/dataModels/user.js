@@ -125,13 +125,13 @@ var UserDM = BaseDM.extend({
 			targetData["baseInfo."+k] = data[k];
 		};
 
-		var id = key.uid;
+		var uid = key.uid;
 		var self = this;
 		var method = "baseInfo";
 
 		//对于直接写，而不是写delta，没必要再读一次了，直接写就是了
 
-		var real_key = self.getCacheKey(method,id);
+		var real_key = self.getCacheKey(method,uid);
 		async.parallel([
 		    function setCache(callback){
 		    	logger.debug("setCache",real_key,data);
@@ -157,7 +157,7 @@ var UserDM = BaseDM.extend({
 		    },
 		    function setDB(callback){
 		    	var collection = mongodb.collection('user');
-		        collection.update({uid:id},{$set:targetData}, {w:1}, function(err, result) {
+		        collection.update({uid:uid},{$set:targetData}, {w:1,safe:true,upsert:true}, function(err, result) {
 		        	if (err) {
 		    			callback(-2,err);
 		    			return;
@@ -195,7 +195,6 @@ var UserDM = BaseDM.extend({
 		//这样有损性能, 但是在想到更好的方法前至少减少了出错的可能性
 		//对于游戏服务器，不持久化数据，每次开局全部重取所有用户数据
 		//对于lobby，自己去再次getdata
-		logger.info("user.setChangeBaseInfo",key,data);
 		var targetData = {};
 		var targetKV = [];
 		for (var k in data) {
@@ -203,14 +202,14 @@ var UserDM = BaseDM.extend({
 			targetKV.push({k:k,v:data[k]});
 		};
 
-		var id = key.uid;
+		var uid = key.uid*1;
 		var self = this;
 		var method = "baseInfo";
 
 		//对于直接写，而不是写delta，没必要再读一次了，直接写就是了
 
-		var real_key = self.getCacheKey(method,id);
-		logger.info("user.begin write",real_key,targetData);
+		var real_key = self.getCacheKey(method,uid);
+		logger.debug("user.begin write",real_key,targetData);
 		async.parallel([
 		    function setCache(callback){
 		    	logger.info("setCache",real_key,targetKV);
@@ -219,13 +218,10 @@ var UserDM = BaseDM.extend({
 					self.keySetExpireTS[real_key] = 0;
 				} 
 				async.each(targetKV, function(item,cbb){
-					logger.info("kv do hincrby",item);
 					kvdb.hincrby(real_key,item.k,item.v,function(err){
-						logger.info("kv do hincrby result",err);
 						cbb(null);
 					})
 				}, function(err){
-					logger.info("kv all each do hincrby result",err);
 				    if (err) {
 				    	callback(-2,err);
 				    	return;
@@ -241,10 +237,9 @@ var UserDM = BaseDM.extend({
 				}		    	
 		    },
 		    function setDB(callback){
-		    	logger.info("mongodb do ",id,targetData);
+		    	logger.info("mongodb do ",uid,targetData);
 		    	var collection = mongodb.collection('user');
-		        collection.update({uid:id},{$inc:targetData}, {w:1}, function(err, result) {
-		        	logger.info("mongodb ret ",err,result);
+		        collection.update({uid:uid},{$inc:targetData}, {w:1,safe:true}, function(err, result) {
 		        	if (err) {
 		    			callback(-2,err);
 		    			return;
@@ -268,7 +263,7 @@ var UserDM = BaseDM.extend({
 		function(err, results){
 		    // the results array will equal ['one','two'] even though
 		    // the second function had a shorter timeout.
-		    logger.info("writeback ret ",err,results);
+		    logger.debug("writeback ret ",err,results);
 		    if (err==null) {
 		    	err = 1;
 		    }

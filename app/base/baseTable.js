@@ -5,15 +5,15 @@ var Table = Class.extend({
 	run : function() {
 		
 	},
-	onJoinTable : function(userSession) {
+	onJoinTable : function(user) {
 		utils.PLEASE_OVERWRITE_ME();
 	},
 	//主动离桌,或主动踢人
-	onLeaveTable : function(userSession) {
-		
+	onLeaveTable : function(user) {
+		utils.PLEASE_OVERWRITE_ME();
 	},
 	//断线,如果尚未离桌再调用离桌
-	onDisConnectUser : function(userSession) {
+	onDisConnectUser : function(user) {
 		
 	},
 	doBroadcast : function(category,method,data) {

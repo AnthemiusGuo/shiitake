@@ -23,7 +23,21 @@ var RPCRouter = BaseRPCRouter.extend({
 		clientSession.send("game","joinTableAck",ret[0],packetSerId,ret[1]);
 
 	},
-	on_msg_game_betReq : function(clientSession,ret,ts,data,packetSerId) {
+	on_msg_game_leaveTableReq : function(clientSession,ret,ts,data,packetSerId) {
+		//{"c":"user","m":"login","d":{"uid":1},"t":1404292893355,"s":0,"r":1}
+		if (!utils.checkParam(data,["prefer","uid"])) {
+			clientSession.sendErrPackFormat(packetSerId);
+			return;
+		}
+		
+		var uid = data.uid;
+		logger.debug("find table ID:"+uid);
+		var ret = this.app.onLeaveTable(uid,tableId);
+
+		clientSession.send("game","joinTableAck",ret[0],packetSerId,ret[1]);
+
+	},
+	on_msg_table_betReq : function(clientSession,ret,ts,data,packetSerId) {
 		//{"c":"user","m":"login","d":{"uid":1},"t":1404292893355,"s":0,"r":1}
 		if (!utils.checkParam(data,["men","point","uid"])) {
 			clientSession.sendErrPackFormat(packetSerId);
@@ -49,7 +63,7 @@ var RPCRouter = BaseRPCRouter.extend({
 		var ret = logicApp.tables[tableId].onBet(uid,data.men,data.point);
 		clientSession.send("table","betAck",ret[0],packetSerId,ret[1]);
 	},
-	on_msg_game_askZhuangReq : function(clientSession,ret,ts,data,packetSerId) {
+	on_msg_table_askZhuangReq : function(clientSession,ret,ts,data,packetSerId) {
 		var uid = data.uid;
 
 		if (!F.isset(logicApp.uidUserMapping[uid])){

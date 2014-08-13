@@ -2955,3 +2955,11 @@ node_modules/log4js/README.md
 node_modules/log4js/test/gelfAppender-test.js
 
 node_modules/log4js/test/global-log-level-test.js
+
+*.o
+
+*.d
+
+node_modules/mongodb/node_modules/kerberos/build/gyp-mac-tool
+
+node_modules/mongodb/node_modules/bson/build/gyp-mac-tool

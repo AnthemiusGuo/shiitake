@@ -94,7 +94,7 @@ var UserRouter = BaseUserRouter.extend({
 		data.uid = userSession.uid;
 		var gameId = data.gameId;
 
-		rpc.call(config.gameIdToServer[gameId],"game",method,{serverId:userSession.gameServerId},data,function(category,method,ret,data,req){
+		rpc.call(config.gameIdToServer[gameId],"table",method,{serverId:userSession.gameServerId},data,function(category,method,ret,data,req){
 			//有的rpc 数据只返回 uid，但是实际需要 userInfo
 			// if (F.isset(this["handle_data_"+category+"_"+method])){
 			// 	data = this["handle_data_"+category+"_"+method](data);

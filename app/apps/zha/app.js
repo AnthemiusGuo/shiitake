@@ -91,14 +91,20 @@ var ZhaServer = GameServer.extend({
 	},
 	doJoinTable : function(uid,tableId){
 		if (!F.isset(this.uidUserMapping[uid])){
-			return [-100,{e:'user not login to game'}];
+			return [-100,{e:'用户尚未登录游戏'}];
+		}
+		if (!F.isset(this.tables[tableId])){
+			return [-101,{e:'桌号不存在'}];
 		}
 		var user = this.uidUserMapping[uid];
 		return this.tables[tableId].onJoinTable(user);
 	},
 	doLeaveTable : function(uid,tableId){
 		if (!F.isset(this.uidUserMapping[uid])){
-			return [-100,{e:'user not login to game'}];
+			return [-100,{e:'用户尚未登录游戏'}];
+		}
+		if (!F.isset(this.tables[tableId])){
+			return [-101,{e:'桌号不存在'}];
 		}
 		var user = this.uidUserMapping[uid];
 		return this.tables[tableId].onLeaveTable(user);
