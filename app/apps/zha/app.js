@@ -99,26 +99,57 @@ var ZhaServer = GameServer.extend({
 		var user = this.uidUserMapping[uid];
 		return this.tables[tableId].onJoinTable(user);
 	},
-	doLeaveTable : function(uid,tableId){
+	doLeaveGame : function(uid){
 		if (!F.isset(this.uidUserMapping[uid])){
 			return [-100,{e:'用户尚未登录游戏'}];
 		}
-		if (!F.isset(this.tables[tableId])){
-			return [-101,{e:'桌号不存在'}];
-		}
 		var user = this.uidUserMapping[uid];
-		return this.tables[tableId].onLeaveTable(user);
+		var tableId = user.tableId;
+
+		if (tableId > 0) {
+			if (!F.isset(this.tables[tableId])){
+				return [-101,{e:'桌号不存在'}];
+			}
+			
+			var ret = this.tables[tableId].onLeaveTable(user);
+			if (ret[0]<0) {
+				return ret;
+			}
+		} else {
+			ret = [1,{}];
+		}
+		
+		this.uidUserMapping[uid] = null;
+		return ret;
 	},
 	checkCanEnterGame : function(data) {
 		//用户钱够不
 		// this.roomConfig
-		return [1,""];
+
+		var credits = data.userInfo.credits;
+		if (credits < this.roomConfig.room_limit_low) {
+			return [-201,"您的游戏币不足，无法进入"];
+		}
+		if (false && credits < this.roomConfig.room_limit_high) {
+			return [-202,"大侠，换个更高的场子虐菜吧！"];
+		}
+		return [1,null];
 	},
 	genEnterGameAck : function(uid) {
 		//如果用户还在比赛当中，返回对应tableid
 		//否则返回tableid 0
 		//TODO
 		return {tableId:0,roomId:this.roomId,gameId:this.GAME_ID};
+	},
+	onUserDisconnect : function(uids) {
+		//对于断线，只标记，因为可能已经下注，不可销毁用户对象。
+		for (var i = 0; i < uids.length; i++) {
+			var uid = uids[i];
+			if (!F.isset(this.uidUserMapping[uid])){
+				continue;
+			}
+			this.uidUserMapping[uid].isConnect = false;
+		};
 	}
 
 });

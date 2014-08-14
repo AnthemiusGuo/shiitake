@@ -25,6 +25,15 @@ var UserRouter = Class.extend({
 	on_msg_default_default : function(category,method,clientSession,ret,ts,data,packetSerId) {
 		logger.info("on_msg_default_default",category,method,ret,ts,data,packetSerId);
 		utils.PLEASE_OVERWRITE_ME();
+	},
+	checkUserLogined : function(client,packetSerId) {
+		if (client.uid<=0 || !F.isset(this.app.uidUserMapping[client.uid])) {
+			client.sendErrNotLogin(packetSerId);
+			return false;
+		} else {
+			return true;
+		}
 	}
+		
 });
 module.exports = UserRouter;

@@ -23,7 +23,7 @@ var RPCRouter = BaseRPCRouter.extend({
 		clientSession.send("game","joinTableAck",ret[0],packetSerId,ret[1]);
 
 	},
-	on_msg_game_leaveTableReq : function(clientSession,ret,ts,data,packetSerId) {
+	on_msg_game_leaveGameReq : function(clientSession,ret,ts,data,packetSerId) {
 		//{"c":"user","m":"login","d":{"uid":1},"t":1404292893355,"s":0,"r":1}
 		if (!utils.checkParam(data,["uid"])) {
 			clientSession.sendErrPackFormat(packetSerId);
@@ -31,7 +31,28 @@ var RPCRouter = BaseRPCRouter.extend({
 		}
 		
 		var uid = data.uid;
-		var ret = this.app.onLeaveTable(uid,tableId);
+
+		if (!F.isset(logicApp.uidUserMapping[uid])){
+			clientSession.sendErr(-1000,"您尚未登录游戏服务器",packetSerId);
+			return;
+		}
+
+		var user = logicApp.uidUserMapping[uid];		
+
+		var ret = this.app.doLeaveGame(uid);
+
+		clientSession.send("game","leaveGameAck",ret[0],packetSerId,ret[1]);
+
+	},
+	on_msg_game_disconnect : function(clientSession,ret,ts,data,packetSerId) {
+		//{"c":"user","m":"login","d":{"uid":1},"t":1404292893355,"s":0,"r":1}
+		if (!utils.checkParam(data,["uid"])) {
+			clientSession.sendErrPackFormat(packetSerId);
+			return;
+		}
+		
+		var uids = data.uids;
+		var ret = this.app.onUserDisconnect(uids);
 
 		clientSession.send("game","leaveTableAck",ret[0],packetSerId,ret[1]);
 

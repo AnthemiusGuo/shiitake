@@ -685,7 +685,8 @@ var Table = TablePublic.extend({
 			return [-200,{e:'您已经下注，不可退出当前游戏'}];
 		}
 		this.userList[user.uid] = null;
-		logicApp.uidUserMapping[user.uid] = null;
+		
+		return [1,{}];
 	},
 	onJoinTable : function(user) {
 		logger.debug("user "+user.uid+" join the table");
@@ -789,6 +790,14 @@ var Table = TablePublic.extend({
 				}
 				logicApp.uidUserMapping[k].closeSocket();
 				logicApp.uidUserMapping[k] = null;
+			} else {
+				//刷新用戶信息
+				dmManager.getData("user","BaseInfo",{uid:k},function(ret,data){
+                    if (ret>0) {
+                    	logicApp.uidUserMapping[k].userInfo = data;
+                    	logicApp.uidUserMapping[k].onGetUserInfo();
+                    }
+                });
 			}
 		}
 		for (var i = 0; i < this.zhuang_queue.length; i++) {

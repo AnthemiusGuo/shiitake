@@ -1,4 +1,4 @@
-var BaseClient = Class.extend({
+var RpcClient = Class.extend({
 	init : function(socket) {
 		this.socket = socket;
 		this.isConnect = true;
@@ -7,6 +7,8 @@ var BaseClient = Class.extend({
 		this.supportZipSignal = false;
 		this.userInfo = null;
 		this.gameId = 0;
+		this.id = 0;
+
 	},
 	onCloseSocket: function() {
 		this.isConnect = false;
@@ -19,6 +21,7 @@ var BaseClient = Class.extend({
 		this.socket.send(JSON.stringify(packet));
 	},
 	send : function(category,method,ret,packetId,data) {
+		logger.debug("rpc reply ",category,method,ret,data)
 		if (this.isConnect==false || !F.isset(this.socket)){
 			logger.error("not connect!!");
 			return;
@@ -64,7 +67,10 @@ var BaseClient = Class.extend({
 	onGetUserInfo: function(){
 		//防出错
 		utils.PLEASE_OVERWRITE_ME();
+	},
+	login : function(serverId) {
+		this.isLogined = true;
+		this.serverId = serverId;
 	}
 });
-
-module.exports = BaseClient;
+module.exports = RpcClient;

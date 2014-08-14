@@ -1,16 +1,22 @@
-var BaseClient = require('framework/base/baseClient');
-var LobbyClient = BaseClient.extend({
-	init : function(socket) {
-		this._super(socket);
+var BaseUser = require('framework/base/baseUser');
+var LobbyUser = BaseUser.extend({
+	init : function(uid) {
+		this._super(uid);
 		this.gameId = 0;
-		
-	},
-	login : function(uid) {
-		this.isLogined = true;
-		this.uid = uid;
+		this.gameServerId = "";
 	},
 	onGetUserInfo : function(){
 		
+	},
+	onEnterGame : function(gameId,reEnterInfo,targetServerId){
+        this.gameId = gameId;
+        this.reEnterInfo = reEnterInfo;
+        this.gameServerId = targetServerId;
+	},
+	onLeaveGame : function(){
+		this.gameId = 0;
+        this.reEnterInfo = {};
+        this.gameServerId = "";
 	},
 	getUserShowInfo : function() {
 		if (!F.isset(this.userInfo)){
@@ -65,4 +71,4 @@ var LobbyClient = BaseClient.extend({
 		}
 	},
 });
-module.exports = LobbyClient;
+module.exports = LobbyUser;

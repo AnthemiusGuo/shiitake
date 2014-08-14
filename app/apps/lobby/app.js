@@ -37,7 +37,7 @@ var LobbyServer = BaseServer.extend({
     genLoadBalance : function() {
         return this.onlineUserCount;
     },
-	doLogin : function(data,userSession,packetId) {
+	doLogin : function(data,client,packetId) {
 		//用户密码并非这里校验, 使用web校验, 所以这里需要校验web生成的ticket
 		var uid = data.uid;
 		var ticket = data.ticket;
@@ -45,10 +45,9 @@ var LobbyServer = BaseServer.extend({
 
         var self = this;
 		if (F.isset(this.uidUserMapping[uid]) && this.uidUserMapping.isConnect) {
-			this.uidUserMapping.kickUser();
+			this.uidUserMapping[uid].kickUser("sameUser");
 		}
 		
-        
 		//waterfall用法
 		//第一个callback函数调用时,第一个参数如果是null,则调用下一个函数(去掉地一个null)
 		//如果不是null则直接调用后面那个单独的回调函数.
@@ -80,15 +79,22 @@ var LobbyServer = BaseServer.extend({
                 dmManager.getData("user","BaseInfo",{uid:uid},function(ret,data){
                     logger.debug("getInfo result",ret);
                     if (ret>0) {
-                    	self.userSocketManager.idClientMapping[uid] = userSession;
-                        userSession.isLogined = true;
-                        userSession.id = uid;
-                        userSession.uid = uid;
+                        if (F.isset(self.uidUserMapping[uid])) {
+                            var userSession = self.uidUserMapping[uid];
+                        } else {
+                            var User = require("app/apps/lobby/user");
+                            var userSession = new User(uid);
+                            self.uidUserMapping[uid] = userSession;
+                        }
+                    	
+                        userSession.onConnect(client);
+                        client.onLogin(userSession);
+
                         userSession.userInfo = data;
                         userSession.game = game;
                         userSession.onGetUserInfo();
-                        userSession.send("user","loginAck",1,packetId,data);
-                        self.sendRoomList(userSession);
+                        client.send("user","loginAck",1,packetId,data);
+                        client.send("user","roomListNot",1,0,{roomList:self.zhaRoomList});
                         //存在redis里面，知道这个用户最近都在我这，php不要再分配给其他lobby了
                         var real_key = "user/lobby/"+uid;
                         kvdb.set(real_key,self.id,function(ret,res){
@@ -114,11 +120,6 @@ var LobbyServer = BaseServer.extend({
             
         });	
 	},
-    sendRoomList : function(userSession) {
-        //改为单入口模式后简单了，不需要再下发服务器列表给游戏了，只需要游戏房间列表
-        //剩下的都在后端自己实现
-        userSession.send("user","roomListNot",1,0,{roomList:this.zhaRoomList});
-    },
     doEnterGame : function(gameModule,data,userSession,packetSerId){
         
         switch (gameModule) {
@@ -160,9 +161,7 @@ var LobbyServer = BaseServer.extend({
         rpc.call("zha","game","enterGameReq",{serverId:targetServerId},{uid:userSession.uid,lobbyId:this.id,userInfo:userSession.getSendToGameInfo()},function(category,method,ret,data,req){
             //登录回调
             if (ret >0) {
-                userSession.gameId = config.GAME_IDS.zha;
-                userSession.roomId = data.roomId;
-                userSession.gameServerId = targetServerId;
+                userSession.onEnterGame(config.GAME_IDS.zha,{roomId:data.roomId},targetServerId);
                 userSession.send("game","enterGameAck",1,packetSerId,data);
             } else {
                 userSession.send("game","enterGameAck",-1,packetSerId,data);
@@ -171,7 +170,35 @@ var LobbyServer = BaseServer.extend({
     },
     onAllReady: function(){
         this._super();
-        this.uidUserMapping = this.userSocketManager.idClientMapping;
+    },
+    doArrangeUser : function(){
+        var target = {};
+        var now = utils.getNowTS();
+        var userDisConnected = {};
+        for (var uid in this.uidUserMapping) {
+            if (this.uidUserMapping[uid]==null) {
+                continue;
+            }
+            if (this.uidUserMapping[uid].isConnect==false && now - this.uidUserMapping[uid].disConnectTime >20000){
+                //每10秒检查一次，并且超过20秒的才删除，这样减少用户来回登录的取数据损耗
+                var user = this.uidUserMapping[uid];
+                if (user.gameId>0) {
+                    //在游戏服务器有数据，需要通知游戏服务器删除
+                    
+                }
+                userDisConnected.push(uid);
+                this.uidUserMapping[uid] = null;
+
+                continue;
+            }
+            target[uid] = this.uidUserMapping;
+        }
+        this.uidUserMapping = target;
+        
+        if (userDisConnected.length>0){
+            logger.info("userDisConnected:",userDisConnected);
+                
+        }
     }
 });
 module.exports = LobbyServer;

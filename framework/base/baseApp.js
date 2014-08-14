@@ -139,7 +139,7 @@ var BaseApp = Class.extend({
 		global.backServer = new WebSocketServer({port: serversInfo.port});
 		backServer.rpcClients = {};
 		this._rpc_sock_id = 0;
-		var ClientRPC = require('framework/base/rpcClient');
+		var ClientRPC = require('framework/clients/rpcClient');
 		backServer.on('connection', function(socket) {
 		    logger.info('some server connected');
 		    this._rpc_sock_id ++;
@@ -166,7 +166,7 @@ var BaseApp = Class.extend({
 		var serversInfo = this.info;
 		//支持对用户接入,监听用户端口
 	    global.frontServer = new WebSocketServer({port: serversInfo.clientPort});
-	    var ClientUser = require('app/apps/'+appTyp+'/client');
+	    var UserClient = require('framework/clients/userClient');
 	    frontServer.userClients = {};
 	    this._user_sock_id = 0;
 	    frontServer.on('connection', function(socket) {
@@ -174,7 +174,7 @@ var BaseApp = Class.extend({
 	        this._user_sock_id ++;
 	        var ts = new Date().getTime();
 	        socket.socket_id = F.md5(this._user_sock_id+"sd"+ts);
-	        var clientSession = new ClientUser(socket);
+	        var clientSession = new UserClient(socket);
 	        if (logicApp.allReady==false) {
 	            clientSession.kickUser("serverNotReady");
 	            return;
@@ -187,9 +187,13 @@ var BaseApp = Class.extend({
 	            logger.debug("===closed user client");
 	            logicApp.userSocketManager.onCloseSocketConnect(socket);
 	            clientSession.onCloseSocket();
-	            clientSession = null;
+	            
 	        });
 	    });
+	    setInterval(this.doArrangeUser,10000);
+	},
+	doArrangeUser : function(){
+		utils.PLEASE_OVERWRITE_ME();
 	},
 	openSocketServer : function(){
 		global.WebSocketServer = require('ws').Server;

@@ -20,6 +20,7 @@ var GAME_ID = 1;
 var packetId = 0;
 var uid = 21;
 var webUrl = "http://127.0.0.1/shiitake/shiitake/web_demo/server.php";
+var nowRoomId = null;
 
 function rand(min, max) {
   //  discuss at: http://phpjs.org/functions/rand/
@@ -128,15 +129,22 @@ var User = function(uid){
 }
 User.prototype.onUserMsg_loginAck = function(category,method,data,ts,packetId,ret) {
 	consoleLog("lobby","logined!");
-	
+	if (data.nowGameId>0) {
+		if (data.nowGameId ==GAME_ID){
+			nowRoomId = data.nowRoomId;
+		}
+	}
 }
 User.prototype.onUserMsg_roomListNot = function(category,method,data,ts,packetId,ret) {
 	consoleLog("lobby","room list!");
 	for (var k in data.roomList){
 		var v =  data.roomList[k];
-		consoleLog("lobby","room id:"+v.roomId+";roomName:"+v.room_name+";room Desc:"+v.room_desc+";online:"+v.online);
+		consoleLog("lobby","k:"+k+";room id:"+v.roomId+";roomName:"+v.room_name+";room Desc:"+v.room_desc+";online:"+v.online);
 	}
-	sendGame('game','enterGameReq',{roomId:10,gameId:GAME_ID})
+	if (nowRoomId) {
+		enter_game(data.roomList[nowRoomId].roomId);
+	}
+	
 }
 
 
@@ -249,13 +257,17 @@ Table.prototype.onGameMsg_OpenNot = function(category,method,data,ts,packetId,re
 	$("#men4 .wl").html(configWL[data.r[4].r]);
 
 
-	if (typeof(data.me)!="undefined"){
-		consoleLog("game","我的下注");
-		consoleLog("game","天:"+data.me.cc[0]+
-						"; 地:"+data.me.cc[1]+
-						"; 玄:"+data.me.cc[2]+
-						"; 黄:"+data.me.cc[3]);
-		consoleLog("game","收入:"+data.me.c+"; 经验:"+data.me.get_exp);
+	if (typeof(data.my)!="undefined"){
+		$("#men1 .wl").append(" ( "+data.my.cc[0]+" ) ");
+		$("#men2 .wl").append(" ( "+data.my.cc[1]+" ) ");
+		$("#men3 .wl").append(" ( "+data.my.cc[2]+" ) ");
+		$("#men4 .wl").append(" ( "+data.my.cc[3]+" ) ");
+
+		consoleLog("game","天:"+data.my.cc[0]+
+						"; 地:"+data.my.cc[1]+
+						"; 玄:"+data.my.cc[2]+
+						"; 黄:"+data.my.cc[3]);
+		consoleLog("game","收入:"+data.my.c+"; 经验:"+data.my.get_exp);
 	}
 }
 
@@ -276,6 +288,10 @@ Game.prototype.onGameMsg_enterGameAck = function(category,method,data,ts,packetI
 	consoleLog("game","enter Game!");
 	sendGame('game','joinTableReq',{gameId:GAME_ID,prefer:data.tableId})
 }
+Game.prototype.onGameMsg_leaveGameAck = function(category,method,data,ts,packetId,ret) {
+	consoleLog("game","leave Game!");
+}
+
 
 
 user = new User(uid);
@@ -343,10 +359,13 @@ function ask_zhuang(){
 	sendGame('table','askZhuangReq',{})
 }
 
-function ask_zhuang(){
-	sendGame('game','leaveTableReq',{})
+function leave_game(){
+	sendGame('game','leaveGameReq',{})
 }
 
+function enter_game(roomId){
+	sendGame('game','enterGameReq',{roomId:roomId,gameId:GAME_ID})
+}
 
 setInterval(function(){
 	$.getJSON(webUrl+"?m=user&a=refresh&uid="+uid,function(json){

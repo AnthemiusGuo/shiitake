@@ -8,7 +8,11 @@ var RPCRouter = BaseRPCRouter.extend({
 		for (var k in data.uids) {
 			var uid = data.uids[k];
 			if (!F.isset(logicApp.uidUserMapping[uid])) {
-				logger.info("this user no in this lobby",uid)
+				logger.debug("this user no in this lobby",uid)
+				continue;
+			}
+			if (!logicApp.uidUserMapping[uid].isConnect) {
+				logger.debug("this user has offline",uid)
 				continue;
 			}
 			var userSession = logicApp.uidUserMapping[uid];
@@ -25,6 +29,10 @@ var RPCRouter = BaseRPCRouter.extend({
 			var uid = data.uids[k];
 			if (!F.isset(logicApp.uidUserMapping[uid])) {
 				logger.info("this user no in this lobby",uid)
+				continue;
+			}
+			if (!logicApp.uidUserMapping[uid].isConnect) {
+				logger.debug("this user has offline",uid)
 				continue;
 			}
 			var userSession = logicApp.uidUserMapping[uid];

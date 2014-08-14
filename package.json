@@ -12,6 +12,7 @@
     "node.class":"latest",
     "phpjs":"latest",
     "log4js":"latest",
-    "async":"latest"
+    "async":"latest",
+    "webkit-devtools-agent":"latest"
   }
 }

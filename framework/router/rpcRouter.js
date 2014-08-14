@@ -10,6 +10,7 @@ var RpcRouter = Class.extend({
 		var data = package.d;
 		var ts = package.t;
 		var ret = package.r;
+		logger.debug("recved rpc call as "+category+"/"+method);
 		if (F.isset(this["on_msg_"+category+"_"+method])) {
 			this["on_msg_"+category+"_"+method](clientSession,ret,ts,data,packetSerId);
 			return;

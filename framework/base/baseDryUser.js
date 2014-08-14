@@ -37,18 +37,7 @@ var BaseDryUser = Class.extend({
 	sendErrPackFormat: function(packetId) {
 		this.sendErr(-9995,"信令格式有误",packetId);
 	},
-	kickUser : function(cause) {
-		if (cause=="sameUser") {
-			this.sendErr(-8999,"您的帐号已经在其他地方登录, 您已经被踢下线。");
-		} else if (cause=="serverNotReady") {
-			this.sendErr(-8998,"服务器尚未准备好,请稍后重试!");
-		}
-		
-		this.closeSocket();
-		//kick 后并不立刻删除本对象，只是置为不连接。
-		//因为 table 中可能这个用户对象还在使用，在 table 本局结束后再遍历所有 null 的对象，等待 GC 回收内存。
-		
-	},
+	
 	closeSocket : function(){
 		if (this.rpcSession) {
 			this.rpcSession.close();

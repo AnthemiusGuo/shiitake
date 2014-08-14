@@ -17,6 +17,7 @@ var ConnectorServer = BaseServer.extend({
                 this.gameServers[k][x] = {status:-1,lb:{balance:0,capability:y.cap,percent:0},lastPing:0};
             }
         }
+
 	},
 	rpc_ping : function(typ,id,data) {
         var ts =  new Date().getTime();
