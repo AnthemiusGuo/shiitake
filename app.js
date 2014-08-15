@@ -3,6 +3,9 @@ global.utils = require('framework/base/baseFunction');
 global.F = require('phpjs');
 global.async = require("async");
 
+// var agent = require('webkit-devtools-agent');
+// agent.start()
+
 var log4js = require('log4js');
 log4js.replaceConsole();
 global.logger = log4js.getLogger();

@@ -15,3 +15,21 @@ e.g.
 * node app.js --typ=zha --id=zha-srv-1-1
 
 * node app.js --typ=robot --id=robot-server-zha
+
+debug
+---------
+for gdb
+=========
+https://github.com/node-inspector/node-inspector
+
+* node-debug node app.js --typ=lobby --id=lobby-server-1 
+
+for heap ,cpu profile
+===========
+
+https://github.com/c4milo/node-webkit-agent
+var agent = require('webkit-devtools-agent');
+agent.start()
+
+http://c4milo.github.io/node-webkit-agent/26.0.1410.65/inspector.html?host=localhost:9999&page=0
+

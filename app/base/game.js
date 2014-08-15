@@ -75,17 +75,25 @@ var GameServer = BaseServer.extend({
 
 
 		var user = new User(lobbyId,clientSession);
-
-		this.uidUserMapping[uid] = user;
-
 		user.isConnect = true;
 		user.id = uid;
 		user.uid = uid;
-		user.userInfo = data.userInfo;
-		user.is_robot = (data.userInfo.is_robot==1);
-		user.onGetUserInfo();
+		
 
-		user.send("game","enterGameAck",1,packetSerId,this.genEnterGameAck(uid));
+		dmManager.getData("user","BaseInfo",{uid:uid},function(ret,data){
+	        logger.debug("getInfo result",ret);
+	        if (ret>0) {
+	        	//返回数据以后再加入mapping
+				this.uidUserMapping[uid] = user;
+			
+				user.userInfo = data;
+				user.is_robot = (data.is_robot==1);
+				user.onGetUserInfo();
+				user.send("game","enterGameAck",1,packetSerId,this.genEnterGameAck(uid));
+			}
+		}.bind(this));
+
+		
 	},
 	checkCanEnterGame : function(data) {
 		utils.PLEASE_OVERWRITE_ME();
