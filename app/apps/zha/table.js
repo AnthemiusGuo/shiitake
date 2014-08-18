@@ -546,6 +546,10 @@ var Table = TablePublic.extend({
 	        if (user_get[uid]>0){
 	            var real_credits = Math.round(user_get[uid]*(1-room_water_ratio));
 	            var exp = (user_get[uid] - real_credits);
+	            if (F.isset(logicApp.uidUserMapping[uid])) {
+	            	//统计非机器人的抽水
+	            	analyser.water +=exp;
+	            }
 	            
 	        } else {
 	        	var real_credits = user_get[uid];
@@ -882,10 +886,10 @@ var Table = TablePublic.extend({
 		}
 	},
 	askRobotUser: function(count) {
-		rpc.call("robot","user","join",{forTyp:"zha"},{count:count,tableId:this.tableId,serverId:logicApp.id,ticket:logicApp.globalTicket});
+		rpc.call("robot","user","join",{forTyp:"zha"},{count:count,tableId:this.tableId,serverId:logicApp.id,ticket:logicApp.globalTicket,credits_low:this.roomConfig.room_limit_low,credits_high:this.roomConfig.room_limit_high,});
 	},
 	askRobotZhuang : function(count) {
-		rpc.call("robot","user","joinAndAskZhuang",{forTyp:"zha"},{count:count,tableId:this.tableId,serverId:logicApp.id,ticket:logicApp.globalTicket});
+		rpc.call("robot","user","joinAndAskZhuang",{forTyp:"zha"},{count:count,tableId:this.tableId,serverId:logicApp.id,ticket:logicApp.globalTicket,credits_low:this.roomConfig.room_zhuang_limit_low,credits_high:this.roomConfig.room_zhuang_limit_high});
 	},
 	doWriteBack : function(data,cb) {
 		logger.info("doWriteBack",data);

@@ -14,7 +14,8 @@ var Analyser = Class.extend({
 			sysWin : 0,
 			water : 0,
 			robotWin : 0,
-			zhuangWin : 0
+			zhuangWin : 0,
+			zhuangWinRound : 0,
 		};
 	},
 	add : function(tableId,data) {

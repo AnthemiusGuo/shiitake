@@ -140,7 +140,28 @@ async.parallel([
         doNext();
     });
 
+
+
 function doNext(){
+  var collection = mongodb.collection('user');
+  var collection2 = mongodb.collection('s_robot');
+  var counter = 100;
+  collection.find({"baseInfo.is_robot":1},{uid:1}).each(function(err,results){
+    counter --;
+    if (counter<0){
+      return;
+    }
+    var uid = results.uid;
+      collection2.update({forTyp:"zha"},{$push:{uids:uid}},{w:1},function(err,result){
+
+     });
+  });
+
+  
+  // 
+}
+
+function doNext3(){
   var collection = mongodb.collection('user');
   var id = 21;
   var targetData = {"baseInfo.credits":-1000,"baseInfo.exp":500,"baseInfo.total_credits":-1000};

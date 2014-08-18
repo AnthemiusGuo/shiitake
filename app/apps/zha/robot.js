@@ -11,9 +11,7 @@ var ZhaRobot = BaseRobot.extend({
 		this.betCounter = 0;
 
 	},
-	initCredits : function(){
-
-	},
+	
 	_changeCanUseChip : function(){
 		var credits = this.userInfo.credits;
 		this.totalBetChip = Math.round(credits / 10);
@@ -129,7 +127,7 @@ var ZhaRobot = BaseRobot.extend({
 	},
 
 	close : function() {
-		this.socket.close();
+		this.call("game","leaveGameReq",{uid:this.uid});
 		this.targetServerId = "";
 		this.connected = false;
 		this.ready = false;

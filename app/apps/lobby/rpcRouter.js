@@ -36,9 +36,9 @@ var RPCRouter = BaseRPCRouter.extend({
 				continue;
 			}
 			var userSession = logicApp.uidUserMapping[uid];
-			for (var k in filterData) {
-				if (F.isset(filterData[k][uid])){
-					data.info.d[k] = filterData[k][uid];
+			for (var k2 in filterData) {
+				if (F.isset(filterData[k2][uid])){
+					data.info.d[k2] = filterData[k2][uid];
 				}
 			}
 			userSession.send(data.info.c,data.info.m,1,0,data.info.d);
@@ -68,6 +68,7 @@ var RPCRouter = BaseRPCRouter.extend({
 				continue;
 			}
 			//
+
 		}
 	},
 });

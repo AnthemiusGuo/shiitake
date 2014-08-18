@@ -15,6 +15,10 @@ var BaseRobot = Class.extend({
 	setInfo : function(data){
 		this.userInfo = data;
 	},
+	initCredits : function(credits){
+		this.userInfo.credits = credits;
+		
+	},
 	call : function(category,method,data){
 		logger.info("robot call",category,method,data,"this.targetServerId",this.targetServerId);
 		data.uid = this.uid;
